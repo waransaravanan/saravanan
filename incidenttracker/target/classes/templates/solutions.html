@@ -24,8 +24,8 @@
             <tr>
                 <th>ID</th>
                 <th>Description</th>
-                <th>Current Solution</th>
-                <th>New Solution</th>
+                <th>Solution</th>
+                <th>Update Solution</th>
             </tr>
         </thead>
         <tbody>
@@ -33,51 +33,17 @@
                 <td th:text="${incident.id}"></td>
                 <td th:text="${incident.description}"></td>
                 <td>
-                    <!-- Display for the solution, with a unique ID -->
-                    <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution}"></span>
+                    <span th:text="${incident.solution} ?: ''"></span>
                 </td>
                 <td>
-                    <!-- Input field and button, with unique IDs and correct onclick call -->
-                    <input type="text" th:id="'solutionInput-' + ${incident.id}" placeholder="Enter solution...">
-                    <button th:onclick="'updateSolution(' + ${incident.id} + ')'">Update</button>
+                    <form th:action="@{'/api/incidents/' + ${incident.id} + '/solution'}" method="post">
+                        <input type="hidden" name="_method" value="put"/>
+                        <input type="text" name="solution" placeholder="New solution"/>
+                        <button type="submit">Update</button>
+                    </form>
                 </td>
             </tr>
         </tbody>
     </table>
-
-    <script>
-    function updateSolution(incidentId) {
-        // Construct the unique ID for the input field for this specific row
-        const inputId = 'solutionInput-' + incidentId;
-        const solution = document.getElementById(inputId).value.trim();
-        if (!solution) {
-            alert('Please enter a solution.');
-            return;
-        }
-
-        fetch(`/api/incidents/${incidentId}/solution`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ solution: solution })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Construct the unique ID for the display span and update it
-            const displayId = 'solutionDisplay-' + incidentId;
-            document.getElementById(displayId).innerText = data.solution;
-            document.getElementById(inputId).value = ''; // Clear the input field
-            alert('Solution updated for incident #' + incidentId);
-        })
-        .catch(error => {
-            console.error('Error updating solution:', error);
-            alert('Failed to update solution.');
-        });
-    }
-    </script>
 </body>
 </html>
