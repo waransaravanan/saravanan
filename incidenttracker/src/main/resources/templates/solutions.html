@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Incident Solutions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #f0f0f0; }
+        input[type="text"] { width: 90%; }
+        button { padding: 4px 10px; }
+    </style>
+</head>
+<body>
+    <h2>Incident Solutions Management</h2>
+    <form method="get" th:action="@{/api/incidents/solutions-ui}">
+        <label for="search">Search by Description:</label>
+        <input type="text" id="search" name="description" placeholder="Enter description..." th:value="${description}">
+        <button type="submit">Search</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Solution</th>
+                <th>Update Solution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="incident : ${incidents}">
+                <td th:text="${incident.id}"></td>
+                <td th:text="${incident.description}"></td>
+                <td>
+                    <span th:text="${incident.solution} ?: ''"></span>
+                </td>
+                <td>
+                    <form th:action="@{'/api/incidents/' + ${incident.id} + '/solution'}" method="post">
+                        <input type="hidden" name="_method" value="put"/>
+                        <input type="text" name="solution" placeholder="New solution"/>
+                        <button type="submit">Update</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

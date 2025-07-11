@@ -1,0 +1,6 @@
+com/example/incidenttracker/controller/ChatController.class
+com/example/incidenttracker/repository/IncidentRepository.class
+com/example/incidenttracker/IncidentTrackerApplication.class
+com/example/incidenttracker/service/IncidentService.class
+com/example/incidenttracker/controller/IncidentController.class
+com/example/incidenttracker/model/Incident.class

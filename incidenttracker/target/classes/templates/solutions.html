@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Incident Solutions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+        th { background: #f0f0f0; }
+        input[type="text"] { width: 90%; }
+        button { padding: 4px 10px; }
+    </style>
+</head>
+<body>
+    <h2>Incident Solutions Management</h2>
+    <form method="get" th:action="@{/api/incidents/solutions-ui}">
+        <label for="search">Search by Description:</label>
+        <input type="text" id="search" name="description" placeholder="Enter description..." th:value="${description}">
+        <button type="submit">Search</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Description</th>
+                <th>Current Solution</th>
+                <th>New Solution</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="incident : ${incidents}">
+                <td th:text="${incident.id}"></td>
+                <td th:text="${incident.description}"></td>
+                <td>
+                    <!-- Display for the solution, with a unique ID -->
+                    <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution}"></span>
+                </td>
+                <td>
+                    <!-- Input field and button, with unique IDs and correct onclick call -->
+                    <input type="text" th:id="'solutionInput-' + ${incident.id}" placeholder="Enter solution...">
+                    <button th:onclick="'updateSolution(' + ${incident.id} + ')'">Update</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+    function updateSolution(incidentId) {
+        // Construct the unique ID for the input field for this specific row
+        const inputId = 'solutionInput-' + incidentId;
+        const solution = document.getElementById(inputId).value.trim();
+        if (!solution) {
+            alert('Please enter a solution.');
+            return;
+        }
+
+        fetch(`/api/incidents/${incidentId}/solution`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ solution: solution })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Construct the unique ID for the display span and update it
+            const displayId = 'solutionDisplay-' + incidentId;
+            document.getElementById(displayId).innerText = data.solution;
+            document.getElementById(inputId).value = ''; // Clear the input field
+            alert('Solution updated for incident #' + incidentId);
+        })
+        .catch(error => {
+            console.error('Error updating solution:', error);
+            alert('Failed to update solution.');
+        });
+    }
+    </script>
+</body>
+</html>

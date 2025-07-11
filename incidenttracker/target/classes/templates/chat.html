@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Incident Tracker Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        #chat-container {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #user-input {
+            display: flex;
+        }
+        #user-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #user-input button {
+            padding: 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            border-radius: 5px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <h2>Incident Tracker Chat</h2>
+        <div id="messages" th:utext="${messages}"></div>
+        <div id="user-input">
+            <input type="text" id="incidentDescription" placeholder="Describe your incident..." />
+            <button onclick="submitIncident()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        function submitIncident() {
+            const description = document.getElementById('incidentDescription').value.trim();
+            if (description) {
+                fetch('/api/incidents/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ description: description })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const messagesDiv = document.getElementById('messages');
+                    messagesDiv.innerHTML += `<div><strong>You:</strong> ${description}</div>`;
+                    if (data.solution) {
+                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> Solution: ${data.solution}</div>`;
+                    } else {
+                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> No solution found, recorded for future reference.</div>`;
+                    }
+                    document.getElementById('incidentDescription').value = '';
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

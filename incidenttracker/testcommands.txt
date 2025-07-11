@@ -1,0 +1,65 @@
+
+test from browser - \
+
+https://bug-free-broccoli-w9v9xj7w55q2pq4-8080.app.github.dev/api/incidents/
+https://bug-free-broccoli-w9v9xj7w55q2pq4-8080.app.github.dev/chat
+https://bug-free-broccoli-w9v9xj7w55q2pq4-8080.app.github.dev/api/incidents/solutions-ui
+
+
+
+IncidentId":null}@waransaravanan ➜ /workspaces/saravanan/incidenttracker (sample) $ history
+    1  curl http://localhost:8080/api/incidents/1
+    2  cd incidenttracker/
+    3  curl http://localhost:8080/api/incidents/1
+    4  curl -X PUT http://localhost:8080/api/incidents/1/solution   -H "Content-Type: application/json"   -d '{"solution":"Restart the printer and check the cable connection."}'
+    5  curl -X PUT http://localhost:8080/api/incidents/2/solution   -H "Content-Type: application/json"   -d '{"solution":"Restart the Monitor and check the cable connection."}'
+    6  curl -X PUT http://localhost:8080/api/incidents/1/solution   -H "Content-Type: application/json"   -d '{"solution":"Restart the printer and check the cable connection."}'
+    7  history
+
+
+    To test all scenarios for your Incident Tracker, you can use tools like Postman, curl, or write unit/integration tests. Here’s a checklist and example requests for each scenario:
+
+1. Submit a New Incident (No Similar Exists)
+Expected: New incident is created, solution is null.
+
+curl -X POST http://localhost:8080/api/incidents/chat \
+  -H "Content-Type: application/json" \
+  -d '{"description":"printer not working"}'
+
+2. Submit an Incident Similar to an Existing One with Solution
+Setup: First, create an incident and manually set a solution in DB or via API.
+Test: Submit a similar description. Expected: Existing incident with solution is returned.
+
+curl -X POST http://localhost:8080/api/incidents/chat \
+  -H "Content-Type: application/json" \
+  -d '{"description":"printer not working"}'
+
+3. Get All Incidents
+Expected: Returns all incidents and subtasks.
+curl http://localhost:8080/api/incidents
+
+4. Create a Sub-Incident (Blocker/Subtask)
+Expected: New incident is created with parentIncidentId set.
+
+curl -X POST http://localhost:8080/api/incidents/1/subtask \
+  -H "Content-Type: application/json" \
+  -d '{"description":"user permission issue"}'
+
+5. Find Solutions for a Description
+Expected: Returns list of incidents containing the description.
+
+curl "http://localhost:8080/api/incidents/solutions?description=printer"
+
+
+6. Get Incident by ID
+Expected: Returns the incident with the given ID.
+
+curl http://localhost:8080/api/incidents/1
+
+
+3. How to Use (Example curl command)
+
+
+curl -X PUT http://localhost:8080/api/incidents/2/solution \
+  -H "Content-Type: application/json" \
+  -d '{"solution":"Restart the Monitor and check the cable connection."}'
