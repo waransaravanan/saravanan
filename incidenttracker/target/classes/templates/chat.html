@@ -265,7 +265,8 @@
                     
                     // Add each message from history
                     history.forEach(msg => {
-                        addMessageToUI(msg.message, msg.sender);
+                        // Don't show buttons for historical messages
+                        addMessageToUI(msg.message, msg.sender, null);
                     });
                 }
             } catch (error) {

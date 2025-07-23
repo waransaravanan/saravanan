@@ -376,9 +376,14 @@ public class ChatService {
     }
     
     private List<Incident> findSimilarSolutions(String description) {
-        // Enhanced similarity matching
+        // Enhanced contextual similarity matching
         List<Incident> allIncidents = incidentService.getAllIncidents();
-        List<String> keywords = extractKeywords(description);
+        List<String> meaningfulKeywords = extractMeaningfulKeywords(description);
+        
+        // If no meaningful keywords found, return empty list
+        if (meaningfulKeywords.isEmpty()) {
+            return new ArrayList<>();
+        }
         
         return allIncidents.stream()
             .filter(incident -> {
@@ -394,20 +399,135 @@ public class ChatService {
                 return hasSolution || hasSolutionLog || isClosedWithActivity;
             })
             .filter(incident -> {
-                String incidentDesc = incident.getDescription().toLowerCase();
-                return keywords.stream().anyMatch(keyword -> 
-                    incidentDesc.contains(keyword) || 
-                    incidentDesc.matches(".*\\b" + keyword + "\\b.*")
-                );
+                // Context-aware similarity matching
+                return calculateContextualSimilarity(description, incident.getDescription()) > 0.3;
             })
             .sorted((i1, i2) -> {
-                // Prioritize closed tickets and those with more solution updates
-                int score1 = calculateSolutionScore(i1);
-                int score2 = calculateSolutionScore(i2);
-                return Integer.compare(score2, score1); // Higher score first
+                // Sort by similarity score combined with solution score
+                double similarity1 = calculateContextualSimilarity(description, i1.getDescription());
+                double similarity2 = calculateContextualSimilarity(description, i2.getDescription());
+                int solutionScore1 = calculateSolutionScore(i1);
+                int solutionScore2 = calculateSolutionScore(i2);
+                
+                double totalScore1 = similarity1 * 10 + solutionScore1;
+                double totalScore2 = similarity2 * 10 + solutionScore2;
+                
+                return Double.compare(totalScore2, totalScore1); // Higher score first
             })
-            .limit(5) // Return top 5 matches
+            .limit(3) // Return top 3 most relevant matches
             .collect(Collectors.toList());
+    }
+    
+    private double calculateContextualSimilarity(String query, String incidentDescription) {
+        // Normalize both strings
+        String normalizedQuery = normalizeText(query);
+        String normalizedIncident = normalizeText(incidentDescription);
+        
+        // Extract domain-specific keywords
+        List<String> queryKeywords = extractMeaningfulKeywords(normalizedQuery);
+        List<String> incidentKeywords = extractMeaningfulKeywords(normalizedIncident);
+        
+        if (queryKeywords.isEmpty() || incidentKeywords.isEmpty()) {
+            return 0.0;
+        }
+        
+        // Calculate keyword overlap with domain context
+        double keywordScore = calculateKeywordOverlap(queryKeywords, incidentKeywords);
+        
+        // Bonus for exact phrase matches
+        double phraseScore = calculatePhraseMatches(normalizedQuery, normalizedIncident);
+        
+        // Combine scores
+        return Math.min(1.0, keywordScore * 0.7 + phraseScore * 0.3);
+    }
+    
+    private String normalizeText(String text) {
+        return text.toLowerCase()
+            .replaceAll("[^a-zA-Z0-9\\s]", " ") // Remove punctuation
+            .replaceAll("\\s+", " ") // Normalize whitespace
+            .trim();
+    }
+    
+    private double calculateKeywordOverlap(List<String> queryKeywords, List<String> incidentKeywords) {
+        Set<String> querySet = new HashSet<>(queryKeywords);
+        Set<String> incidentSet = new HashSet<>(incidentKeywords);
+        
+        // Find intersection
+        Set<String> intersection = new HashSet<>(querySet);
+        intersection.retainAll(incidentSet);
+        
+        // Calculate Jaccard similarity
+        Set<String> union = new HashSet<>(querySet);
+        union.addAll(incidentSet);
+        
+        return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
+    }
+    
+    private double calculatePhraseMatches(String query, String incident) {
+        String[] queryWords = query.split("\\s+");
+        double score = 0.0;
+        
+        // Check for exact phrase matches (2+ words)
+        for (int i = 0; i < queryWords.length - 1; i++) {
+            String phrase = queryWords[i] + " " + queryWords[i + 1];
+            if (incident.contains(phrase)) {
+                score += 0.5; // Bonus for each phrase match
+            }
+        }
+        
+        return Math.min(1.0, score);
+    }
+    
+    private List<String> extractMeaningfulKeywords(String description) {
+        // Extract only meaningful IT-related keywords, excluding generic words
+        String[] words = description.toLowerCase().split("\\s+");
+        List<String> keywords = new ArrayList<>();
+        
+        // Define stop words to exclude
+        Set<String> stopWords = Set.of(
+            "issue", "problem", "not", "working", "error", "trouble", "help", 
+            "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
+            "have", "has", "had", "do", "does", "did", "will", "would", "could", "should",
+            "can", "cant", "cannot", "my", "me", "i", "you", "your", "we", "us", "our"
+        );
+        
+        // Domain-specific meaningful terms
+        Map<String, List<String>> domainTerms = Map.of(
+            "printer", Arrays.asList("printer", "printing", "print", "inkjet", "laser"),
+            "monitor", Arrays.asList("monitor", "display", "screen", "lcd", "led", "resolution"),
+            "network", Arrays.asList("network", "internet", "wifi", "ethernet", "connection", "router"),
+            "computer", Arrays.asList("computer", "pc", "laptop", "desktop", "cpu", "hardware"),
+            "software", Arrays.asList("software", "application", "app", "program", "install"),
+            "login", Arrays.asList("login", "password", "authentication", "sso", "signin", "access"),
+            "email", Arrays.asList("email", "mail", "outlook", "gmail", "exchange"),
+            "file", Arrays.asList("file", "document", "folder", "share", "storage"),
+            "server", Arrays.asList("server", "database", "web", "api", "service"),
+            "security", Arrays.asList("security", "virus", "malware", "firewall", "antivirus")
+        );
+        
+        // Extract meaningful terms
+        for (String word : words) {
+            // Skip stop words and very short words
+            if (!stopWords.contains(word) && word.length() > 2) {
+                // Check if it's a domain-specific term
+                boolean isDomainTerm = false;
+                for (Map.Entry<String, List<String>> entry : domainTerms.entrySet()) {
+                    if (entry.getValue().contains(word)) {
+                        keywords.add(entry.getKey()); // Add the main category
+                        keywords.add(word); // Add the specific term
+                        isDomainTerm = true;
+                        break;
+                    }
+                }
+                
+                // If not a domain term but longer than 3 chars, consider it
+                if (!isDomainTerm && word.length() > 3) {
+                    keywords.add(word);
+                }
+            }
+        }
+        
+        return keywords.stream().distinct().collect(Collectors.toList());
     }
     
     private int calculateSolutionScore(Incident incident) {
@@ -431,39 +551,6 @@ public class ChatService {
         }
         
         return score;
-    }
-    
-    private List<String> extractKeywords(String description) {
-        // Extract meaningful keywords from description
-        String[] words = description.toLowerCase().split("\\s+");
-        List<String> keywords = new ArrayList<>();
-        
-        // Common IT keywords and their variations
-        Map<String, List<String>> synonyms = Map.of(
-            "printer", Arrays.asList("printer", "printing", "print"),
-            "network", Arrays.asList("network", "internet", "connection", "wifi", "lan"),
-            "computer", Arrays.asList("computer", "pc", "laptop", "desktop", "machine"),
-            "software", Arrays.asList("software", "application", "app", "program"),
-            "password", Arrays.asList("password", "login", "authentication", "access"),
-            "email", Arrays.asList("email", "mail", "outlook", "gmail"),
-            "file", Arrays.asList("file", "document", "folder", "directory")
-        );
-        
-        for (String word : words) {
-            // Add exact word
-            if (word.length() > 3) {
-                keywords.add(word);
-            }
-            
-            // Add synonyms
-            synonyms.forEach((key, values) -> {
-                if (values.contains(word)) {
-                    keywords.addAll(values);
-                }
-            });
-        }
-        
-        return keywords.stream().distinct().collect(Collectors.toList());
     }
     
     private boolean isPositiveResponse(String message) {
