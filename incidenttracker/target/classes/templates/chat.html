@@ -49,15 +49,27 @@
 <body>
     <div id="chat-container">
         <h2>Incident Tracker Chat</h2>
-        <div id="messages" th:utext="${messages}"></div>
+        
+        <!-- Navigation Links -->
+        <div style="margin-bottom: 20px; text-align: center;">
+            <a href="/api/incidents/table" style="text-decoration: none; background: #007bff; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View All Incidents</a>
+            <a href="/api/incidents/suggestion-ui" style="text-decoration: none; background: #28a745; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Get Suggestions</a>
+            <a href="/api/incidents/solutions-ui" style="text-decoration: none; background: #17a2b8; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View Solutions</a>
+        </div>
+        
+        <div id="messages"></div>
         <div id="user-input">
-            <input type="text" id="incidentDescription" placeholder="Describe your incident..." />
+            <input type="text" id="incidentDescription" placeholder="Type your question or incident..." />
             <button onclick="submitIncident()">Submit</button>
+            <button id="closeSessionBtn" onclick="closeSession()" style="display:none;background-color:#dc3545;">Close Session</button>
+            <button id="newIncidentBtn" onclick="startNewIncident()" style="display:none;background-color:#007bff; color:white; margin-left:5px;">New Incident</button>
         </div>
     </div>
 
     <script>
+        let sessionActive = true;
         function submitIncident() {
+            if (!sessionActive) return;
             const description = document.getElementById('incidentDescription').value.trim();
             if (description) {
                 fetch('/api/incidents/chat', {
@@ -74,13 +86,42 @@
                     if (data.solution) {
                         messagesDiv.innerHTML += `<div><strong>Bot:</strong> Solution: ${data.solution}</div>`;
                     } else {
-                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> No solution found, recorded for future reference.</div>`;
+                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> No matching solutions found in our history but recorded for future reference.</div>`;
                     }
+                    messagesDiv.innerHTML += `<div><strong>Bot:</strong> Do you have any further questions? <em>(Type your next question or click 'Close Session')</em></div>`;
                     document.getElementById('incidentDescription').value = '';
+                    document.getElementById('closeSessionBtn').style.display = 'inline-block';
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 });
             }
         }
+
+        function closeSession() {
+            sessionActive = false;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<div style='color:#dc3545'><strong>Bot:</strong> Session is now closed. Thank you!</div>`;
+            messagesDiv.innerHTML += `<div style='color:#007bff'><strong>Bot:</strong> Do you have a different incident to report? <em>(Click 'New Incident' to start)</em></div>`;
+            document.getElementById('incidentDescription').disabled = true;
+            document.getElementById('closeSessionBtn').style.display = 'none';
+            document.getElementById('newIncidentBtn').style.display = 'inline-block';
+        }
+
+        function startNewIncident() {
+            sessionActive = true;
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            document.getElementById('incidentDescription').disabled = false;
+            document.getElementById('incidentDescription').value = '';
+            document.getElementById('closeSessionBtn').style.display = 'none';
+            document.getElementById('newIncidentBtn').style.display = 'none';
+        }
+
+        document.getElementById('incidentDescription').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitIncident();
+            }
+        });
     </script>
 </body>
 </html>

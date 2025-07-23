@@ -4,14 +4,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Incident {
 
     @Id
@@ -21,4 +16,38 @@ public class Incident {
     private String solution;
     private Long parentIncidentId; // null for main incidents, set for subtasks
 
+
+
+// Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getSolution() {
+        return solution;
+    }
+
+    public void setSolution(String solution) {
+        this.solution = solution;
+    }
+
+    public Long getParentIncidentId() {
+        return parentIncidentId;
+    }
+
+    public void setParentIncidentId(Long parentIncidentId) {
+        this.parentIncidentId = parentIncidentId;
+    }
 }

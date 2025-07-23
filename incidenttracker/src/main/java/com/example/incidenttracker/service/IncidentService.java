@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IncidentService {
@@ -19,7 +20,21 @@ public class IncidentService {
     }
 
     public List<Incident> findSolutions(String description) {
-        return incidentRepository.findByDescriptionContainingIgnoreCase(description);
+        List<Incident> allIncidents = incidentRepository.findAll();
+        
+        // If no description filter is provided or it's empty, return all incidents
+        if (description == null || description.trim().isEmpty()) {
+            return allIncidents;
+        }
+        
+        // Filter incidents by description (case-insensitive) and handle null descriptions
+        String searchTerm = description.trim().toLowerCase();
+        List<Incident> relevantIncidents = allIncidents.stream()
+            .filter(incident -> incident.getDescription() != null && 
+                              incident.getDescription().toLowerCase().contains(searchTerm))
+            .collect(Collectors.toList());
+        
+        return relevantIncidents;
     }
 
     public Optional<Incident> findIncidentById(Long id) {

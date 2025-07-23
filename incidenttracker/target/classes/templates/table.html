@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Table</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table-container {
+            margin-top: 20px;
+        }
+        .incident-row {
+            cursor: pointer;
+        }
+        .incident-row:hover {
+            background-color: #f8f9fa;
+        }
+        .parent-incident {
+            font-weight: bold;
+            background-color: #e3f2fd;
+        }
+        .sub-incident {
+            background-color: #f1f8e9;
+            padding-left: 30px;
+        }
+        .solution-column {
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        .description-column {
+            max-width: 250px;
+            word-wrap: break-word;
+        }
+        .no-solution {
+            color: #dc3545;
+            font-style: italic;
+        }
+        .has-solution {
+            color: #28a745;
+        }
+        .actions-column {
+            width: 150px;
+        }
+        .search-box {
+            margin-bottom: 20px;
+        }
+        .stats-cards {
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4 text-center">Incident Tracker - All Incidents</h2>
+                
+                <!-- Navigation Links -->
+                <div class="mb-3 text-center">
+                    <a href="/api/incidents/suggestion-ui" class="btn btn-primary me-2">Get Suggestions</a>
+                    <a href="/api/incidents/solutions-ui" class="btn btn-info me-2">View Solutions</a>
+                    <a href="/chat" class="btn btn-secondary">Chat Interface</a>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row stats-cards">
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Incidents</h5>
+                                <h3 th:text="${totalIncidents}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Solved</h5>
+                                <h3 th:text="${solvedIncidents}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Pending</h5>
+                                <h3 th:text="${pendingIncidents}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Sub-incidents</h5>
+                                <h3 th:text="${subIncidents}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div class="card search-box">
+                    <div class="card-body">
+                        <form method="get" th:action="@{/api/incidents/table}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search" 
+                                           th:value="${searchTerm}" placeholder="Search incidents...">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="status">
+                                        <option value="">All Status</option>
+                                        <option value="solved" th:selected="${status == 'solved'}">Solved</option>
+                                        <option value="pending" th:selected="${status == 'pending'}">Pending</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="type">
+                                        <option value="">All Types</option>
+                                        <option value="parent" th:selected="${type == 'parent'}">Parent Incidents</option>
+                                        <option value="sub" th:selected="${type == 'sub'}">Sub-incidents</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Incidents Table -->
+                <div class="card table-container">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            Incidents List 
+                            <span class="badge bg-secondary ms-2" th:text="${#lists.size(incidents)}">0</span>
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col">ID</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col">Solution</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col" class="actions-column">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(incidents)}">
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                                <p>No incidents found matching your criteria.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:each="incident : ${incidents}" 
+                                        th:class="${incident.parentIncidentId == null ? 'parent-incident' : 'sub-incident'}"
+                                        class="incident-row">
+                                        <td th:text="${incident.id}">1</td>
+                                        <td class="description-column">
+                                            <span th:if="${incident.parentIncidentId != null}" class="text-muted me-2">↳</span>
+                                            <span th:text="${incident.description}">Sample description</span>
+                                        </td>
+                                        <td class="solution-column">
+                                            <span th:if="${incident.solution != null and !#strings.isEmpty(incident.solution)}" 
+                                                  th:text="${incident.solution}" class="has-solution">Solution text</span>
+                                            <span th:if="${incident.solution == null or #strings.isEmpty(incident.solution)}" 
+                                                  class="no-solution">No solution yet</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${incident.solution != null and !#strings.isEmpty(incident.solution)}" 
+                                                  class="badge bg-success">Solved</span>
+                                            <span th:if="${incident.solution == null or #strings.isEmpty(incident.solution)}" 
+                                                  class="badge bg-warning">Pending</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${incident.parentIncidentId == null}" class="badge bg-primary">Parent</span>
+                                            <span th:if="${incident.parentIncidentId != null}" class="badge bg-info">Sub-incident</span>
+                                        </td>
+                                        <td class="actions-column">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-primary" 
+                                                        th:onclick="'editSolution(' + ${incident.id} + ')'"
+                                                        title="Edit Solution">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a th:href="@{/api/incidents/suggestion-ui(description=${incident.description})}" 
+                                                   class="btn btn-outline-info" title="Get Suggestions">
+                                                    <i class="fas fa-lightbulb"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Solution Modal -->
+                <div class="modal fade" id="editSolutionModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Edit Solution</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form id="editSolutionForm" method="post">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="incidentDescription" class="form-label">Incident Description</label>
+                                        <textarea class="form-control" id="incidentDescription" rows="2" readonly></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="solutionText" class="form-label">Solution</label>
+                                        <textarea class="form-control" id="solutionText" name="solution" rows="4" 
+                                                  placeholder="Enter the solution for this incident..."></textarea>
+                                    </div>
+                                    <!-- Hidden input for incident description -->
+                                    <input type="hidden" id="incidentDescriptionHidden" name="incidentDescription">
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save Solution</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script th:inline="javascript">
+        let incidents = /*[[${incidents}]]*/ [];
+        
+        function editSolution(incidentId) {
+            const incident = incidents.find(i => i.id === incidentId);
+            if (incident) {
+                document.getElementById('incidentDescription').value = incident.description;
+                document.getElementById('incidentDescriptionHidden').value = incident.description;
+                document.getElementById('solutionText').value = incident.solution || '';
+                
+                const form = document.getElementById('editSolutionForm');
+                form.action = '/api/incidents/solution-by-description';
+                
+                // Add hidden input for current search parameters
+                const currentUrl = new URL(window.location);
+                ['search', 'status', 'type'].forEach(param => {
+                    const value = currentUrl.searchParams.get(param);
+                    if (value) {
+                        let hiddenInput = form.querySelector(`input[name="${param}"]`);
+                        if (!hiddenInput) {
+                            hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = param;
+                            form.appendChild(hiddenInput);
+                        }
+                        hiddenInput.value = value;
+                    }
+                });
+                
+                const modal = new bootstrap.Modal(document.getElementById('editSolutionModal'));
+                modal.show();
+            }
+        }
+    </script>
+</body>
+</html>

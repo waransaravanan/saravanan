@@ -14,6 +14,14 @@
 </head>
 <body>
     <h2>Incident Solutions Management</h2>
+    
+    <!-- Navigation Links -->
+    <div style="margin-bottom: 20px; text-align: center;">
+        <a href="/api/incidents/table" style="text-decoration: none; background: #007bff; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View All Incidents</a>
+        <a href="/api/incidents/suggestion-ui" style="text-decoration: none; background: #28a745; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Get Suggestions</a>
+        <a href="/chat" style="text-decoration: none; background: #6c757d; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Chat Interface</a>
+    </div>
+    
     <form method="get" th:action="@{/api/incidents/solutions-ui}">
         <label for="search">Search by Description:</label>
         <input type="text" id="search" name="description" placeholder="Enter description..." th:value="${description}">
@@ -33,17 +41,51 @@
                 <td th:text="${incident.id}"></td>
                 <td th:text="${incident.description}"></td>
                 <td>
-                    <span th:text="${incident.solution} ?: ''"></span>
+                    <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution} ?: ''"></span>
                 </td>
                 <td>
-                    <form th:action="@{'/api/incidents/' + ${incident.id} + '/solution'}" method="post">
-                        <input type="hidden" name="_method" value="put"/>
-                        <input type="text" name="solution" placeholder="New solution"/>
-                        <button type="submit">Update</button>
-                    </form>
+                    <input type="text" th:id="'solutionInput-' + ${incident.id}" placeholder="New solution"/>
+                    <button type="button" th:onclick="'updateSolution(' + ${incident.id} + ')'">Update</button>
                 </td>
             </tr>
         </tbody>
     </table>
 </body>
+<script>
+function updateSolution(incidentId) {
+    const inputId = 'solutionInput-' + incidentId;
+    const displayId = 'solutionDisplay-' + incidentId;
+    const solution = document.getElementById(inputId).value.trim();
+    if (!solution) {
+        alert('Please enter a solution.');
+        return;
+    }
+    fetch(`/api/incidents/${incidentId}/solution`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solution: solution })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById(displayId).innerText = data.solution;
+        document.getElementById(inputId).value = '';
+        alert('Solution updated!');
+    })
+    .catch(() => alert('Failed to update solution.'));
+}
+
+// Add Enter key support for all solution inputs
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[id^="solutionInput-"]').forEach(function(input) {
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                // Extract incidentId from input's id
+                const incidentId = this.id.split('-')[1];
+                updateSolution(incidentId);
+            }
+        });
+    });
+});
+</script>
 </html>
