@@ -5,6 +5,8 @@ import com.example.incidenttracker.repository.IncidentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -15,8 +17,30 @@ public class IncidentService {
     @Autowired
     private IncidentRepository incidentRepository;
 
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public Incident saveIncident(Incident incident) {
+        // Generate incident number if not already set
+        if (incident.getIncidentNumber() == null || incident.getIncidentNumber().isEmpty()) {
+            incident.setIncidentNumber(generateIncidentNumber());
+        }
+        
+        // Set creation timestamp and status for new incidents
+        if (incident.getId() == null) {
+            incident.setCreatedAt(LocalDateTime.now());
+            incident.setStatus("OPEN");
+            // Add creation log entry
+            incident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + incident.getDescription());
+        }
+        
+        incident.setUpdatedAt(LocalDateTime.now());
         return incidentRepository.save(incident);
+    }
+
+    private String generateIncidentNumber() {
+        // Get the count of all incidents to generate next number
+        long count = incidentRepository.count();
+        return String.format("INC-%04d", count + 1);
     }
 
     public List<Incident> findSolutions(String description) {
@@ -59,8 +83,26 @@ public class IncidentService {
                     Incident newIncident = new Incident();
                     newIncident.setDescription(description.trim());
                     newIncident.setSolution(null);
+                    newIncident.setIncidentNumber(generateIncidentNumber());
+                    newIncident.setCreatedAt(LocalDateTime.now());
+                    newIncident.setStatus("OPEN");
+                    newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.trim());
+                    newIncident.setUpdatedAt(LocalDateTime.now());
                     return incidentRepository.save(newIncident);
                 });
+    }
+
+    public Incident createIncidentWithoutSolution(String description) {
+        // Create a new incident without solution (for when user wants to create ticket)
+        Incident newIncident = new Incident();
+        newIncident.setDescription(description.trim());
+        newIncident.setSolution(null);
+        newIncident.setIncidentNumber(generateIncidentNumber());
+        newIncident.setCreatedAt(LocalDateTime.now());
+        newIncident.setStatus("OPEN");
+        newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.trim());
+        newIncident.setUpdatedAt(LocalDateTime.now());
+        return incidentRepository.save(newIncident);
     }
 
     public Incident createSubIncident(Long parentIncidentId, String description) {
@@ -71,13 +113,60 @@ public class IncidentService {
         subIncident.setDescription(description);
         subIncident.setSolution(null);
         subIncident.setParentIncidentId(parentIncidentId);
+        subIncident.setIncidentNumber(generateIncidentNumber());
+        subIncident.setCreatedAt(LocalDateTime.now());
+        subIncident.setStatus("OPEN");
+        subIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Sub-ticket created: " + description);
+        subIncident.setUpdatedAt(LocalDateTime.now());
         return incidentRepository.save(subIncident);
     }
 
     public Incident updateIncidentSolution(Long id, String solution) {
         return incidentRepository.findById(id)
             .map(incident -> {
+                // Add solution to log instead of replacing main solution
+                String logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Solution added: " + solution;
+                incident.addSolutionLogEntry(logEntry);
+                
+                // Update the main solution field (for display purposes)
                 incident.setSolution(solution);
+                incident.setUpdatedAt(LocalDateTime.now());
+                
+                // Update status to IN_PROGRESS if it was OPEN
+                if ("OPEN".equals(incident.getStatus())) {
+                    incident.setStatus("IN_PROGRESS");
+                }
+                
+                return incidentRepository.save(incident);
+            })
+            .orElse(null);
+    }
+
+    public Incident addSolutionUpdate(Long id, String update) {
+        return incidentRepository.findById(id)
+            .map(incident -> {
+                // Add update to log without changing main solution
+                String logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Update: " + update;
+                incident.addSolutionLogEntry(logEntry);
+                incident.setUpdatedAt(LocalDateTime.now());
+                
+                // Update status to IN_PROGRESS if it was OPEN
+                if ("OPEN".equals(incident.getStatus())) {
+                    incident.setStatus("IN_PROGRESS");
+                }
+                
+                return incidentRepository.save(incident);
+            })
+            .orElse(null);
+    }
+
+    public Incident closeIncident(Long id) {
+        return incidentRepository.findById(id)
+            .map(incident -> {
+                incident.setStatus("CLOSED");
+                incident.setClosedAt(LocalDateTime.now());
+                incident.setUpdatedAt(LocalDateTime.now());
+                incident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket closed");
                 return incidentRepository.save(incident);
             })
             .orElse(null);

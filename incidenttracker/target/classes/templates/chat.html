@@ -2,125 +2,531 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Incident Tracker Chat</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Tracker - Chat Support</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #chat-container {
+        
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
             background: white;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
-        #messages {
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        #user-input {
-            display: flex;
-        }
-        #user-input input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        #user-input button {
-            padding: 10px;
-            border: none;
-            background-color: #28a745;
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 5px;
-            margin-left: 5px;
-            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            scroll-behavior: smooth;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-message {
+            align-items: flex-end;
+        }
+        
+        .bot-message {
+            align-items: flex-start;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-line;
+        }
+        
+        .user-message .message-bubble {
+            background: #007bff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message .message-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .bot-message .message-bubble a {
+            color: #007bff;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        
+        .bot-message .message-bubble a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+        
+        .message-meta {
+            font-size: 0.8em;
+            color: #6c757d;
+            margin: 5px 10px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+        }
+        
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #007bff;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typingAnimation {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .input-group {
+            background: #f8f9fa;
+            border-radius: 25px;
+            padding: 5px;
+        }
+        
+        .form-control {
+            border: none;
+            background: transparent;
+            border-radius: 20px;
+            padding: 10px 15px;
+        }
+        
+        .form-control:focus {
+            box-shadow: none;
+            background: transparent;
+        }
+        
+        .btn-send {
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: #007bff;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-send:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+        
+        .navigation-links {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .nav-link-custom {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link-custom:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
-    <div id="chat-container">
-        <h2>Incident Tracker Chat</h2>
-        
-        <!-- Navigation Links -->
-        <div style="margin-bottom: 20px; text-align: center;">
-            <a href="/api/incidents/table" style="text-decoration: none; background: #007bff; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View All Incidents</a>
-            <a href="/api/incidents/suggestion-ui" style="text-decoration: none; background: #28a745; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Get Suggestions</a>
-            <a href="/api/incidents/solutions-ui" style="text-decoration: none; background: #17a2b8; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View Solutions</a>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h3><i class="fas fa-robot me-2"></i>IT Support Chat Assistant</h3>
+            <p class="mb-0">Hi! I'm here to help you resolve IT issues quickly and efficiently.</p>
+            
+            <div class="navigation-links mt-3">
+                <a href="/api/incidents/table" class="nav-link-custom">
+                    <i class="fas fa-table me-1"></i>All Tickets
+                </a>
+                <a href="/api/incidents/solutions-ui" class="nav-link-custom">
+                    <i class="fas fa-clipboard-check me-1"></i>Solutions
+                </a>
+            </div>
         </div>
         
-        <div id="messages"></div>
-        <div id="user-input">
-            <input type="text" id="incidentDescription" placeholder="Type your question or incident..." />
-            <button onclick="submitIncident()">Submit</button>
-            <button id="closeSessionBtn" onclick="closeSession()" style="display:none;background-color:#dc3545;">Close Session</button>
-            <button id="newIncidentBtn" onclick="startNewIncident()" style="display:none;background-color:#007bff; color:white; margin-left:5px;">New Incident</button>
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <i class="fas fa-comments text-primary"></i>
+                <p>Welcome! Please describe your IT issue, and I'll help you find a solution.</p>
+                <small>For example: "printer not working", "can't access email", "computer running slow"</small>
+            </div>
+        </div>
+        
+        <div class="message typing-indicator" id="typingIndicator">
+            <div class="message-bubble">
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-group">
+                <input type="text" class="form-control" id="messageInput" 
+                       placeholder="Describe your IT issue..." maxlength="500">
+                <button class="btn btn-send" type="button" id="sendButton" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-muted">Press Enter to send • Type "help" for assistance</small>
+                <br>
+                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="clearChatHistory()">
+                    <i class="fas fa-trash"></i> Clear Chat History
+                </button>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let sessionActive = true;
-        function submitIncident() {
-            if (!sessionActive) return;
-            const description = document.getElementById('incidentDescription').value.trim();
-            if (description) {
-                fetch('/api/incidents/chat', {
+        let isWaiting = false;
+        
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('messageInput').focus();
+            loadConversationHistory();
+        });
+        
+        // Load existing conversation history
+        async function loadConversationHistory() {
+            try {
+                const response = await fetch('/api/chat/history');
+                if (response.ok) {
+                    const history = await response.json();
+                    const messagesContainer = document.getElementById('chatMessages');
+                    
+                    // Clear welcome message if there's history
+                    if (history.length > 0) {
+                        messagesContainer.innerHTML = '';
+                    }
+                    
+                    // Add each message from history
+                    history.forEach(msg => {
+                        addMessageToUI(msg.message, msg.sender);
+                    });
+                }
+            } catch (error) {
+                console.log('No previous conversation found or error loading history');
+            }
+        }
+        
+        // Send message function
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isWaiting) return;
+            
+            // Add user message to chat
+            addMessageToUI(message, 'user');
+            input.value = '';
+            isWaiting = true;
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chat/message', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ description: description })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const messagesDiv = document.getElementById('messages');
-                    messagesDiv.innerHTML += `<div><strong>You:</strong> ${description}</div>`;
-                    if (data.solution) {
-                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> Solution: ${data.solution}</div>`;
-                    } else {
-                        messagesDiv.innerHTML += `<div><strong>Bot:</strong> No matching solutions found in our history but recorded for future reference.</div>`;
-                    }
-                    messagesDiv.innerHTML += `<div><strong>Bot:</strong> Do you have any further questions? <em>(Type your next question or click 'Close Session')</em></div>`;
-                    document.getElementById('incidentDescription').value = '';
-                    document.getElementById('closeSessionBtn').style.display = 'inline-block';
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    body: JSON.stringify({ message: message })
                 });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Hide typing indicator and add bot response
+                    setTimeout(() => {
+                        hideTypingIndicator();
+                        addMessageToUI(data.message, 'bot', data.buttons);
+                        isWaiting = false;
+                    }, 1000); // Simulate typing delay
+                } else {
+                    hideTypingIndicator();
+                    addMessageToUI('Sorry, I encountered an error. Please try again.', 'bot');
+                    isWaiting = false;
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessageToUI('Sorry, I\'m having trouble connecting. Please check your connection and try again.', 'bot');
+                isWaiting = false;
             }
         }
-
-        function closeSession() {
-            sessionActive = false;
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML += `<div style='color:#dc3545'><strong>Bot:</strong> Session is now closed. Thank you!</div>`;
-            messagesDiv.innerHTML += `<div style='color:#007bff'><strong>Bot:</strong> Do you have a different incident to report? <em>(Click 'New Incident' to start)</em></div>`;
-            document.getElementById('incidentDescription').disabled = true;
-            document.getElementById('closeSessionBtn').style.display = 'none';
-            document.getElementById('newIncidentBtn').style.display = 'inline-block';
-        }
-
-        function startNewIncident() {
-            sessionActive = true;
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML = '';
-            document.getElementById('incidentDescription').disabled = false;
-            document.getElementById('incidentDescription').value = '';
-            document.getElementById('closeSessionBtn').style.display = 'none';
-            document.getElementById('newIncidentBtn').style.display = 'none';
-        }
-
-        document.getElementById('incidentDescription').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                submitIncident();
+        
+        // Add message to chat UI (renamed from addMessage to avoid confusion)
+        function addMessageToUI(text, sender, buttons) {
+            const messagesContainer = document.getElementById('chatMessages');
+            
+            // Remove welcome message if this is the first real message
+            const welcomeMsg = messagesContainer.querySelector('.welcome-message');
+            if (welcomeMsg && (sender === 'user' || sender === 'bot')) {
+                welcomeMsg.remove();
             }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            
+            // Convert markdown-style links to HTML hyperlinks for bot messages
+            if (sender === 'bot') {
+                // Simple function to convert markdown links to HTML
+                function convertMarkdownLinks(text) {
+                    let result = text;
+                    // Find all markdown links in the format [text](url)
+                    while (result.includes('[') && result.includes('](') && result.includes(')')) {
+                        let startBracket = result.indexOf('[');
+                        let middleBracket = result.indexOf('](', startBracket);
+                        let endBracket = result.indexOf(')', middleBracket);
+                        
+                        if (startBracket < middleBracket && middleBracket < endBracket) {
+                            let linkText = result.substring(startBracket + 1, middleBracket);
+                            let linkUrl = result.substring(middleBracket + 2, endBracket);
+                            let markdownLink = result.substring(startBracket, endBracket + 1);
+                            let htmlLink = '<a href="' + linkUrl + '" target="_blank" style="color: #007bff; text-decoration: underline;">' + linkText + '</a>';
+                            result = result.replace(markdownLink, htmlLink);
+                        } else {
+                            break;
+                        }
+                    }
+                    return result;
+                }
+                
+                const htmlText = convertMarkdownLinks(text);
+                bubble.innerHTML = htmlText;
+            } else {
+                bubble.textContent = text;
+            }
+            
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = sender === 'user' ? 'You' : 'Support Bot';
+            
+            messageDiv.appendChild(bubble);
+            messageDiv.appendChild(meta);
+            
+            // Add buttons if provided (only for bot messages)
+            if (sender === 'bot' && buttons && buttons.length > 0) {
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.className = 'message-buttons';
+                buttonsContainer.style.marginTop = '10px';
+                buttonsContainer.style.display = 'flex';
+                buttonsContainer.style.gap = '8px';
+                buttonsContainer.style.flexWrap = 'wrap';
+                
+                buttons.forEach(button => {
+                    const btnElement = document.createElement('button');
+                    btnElement.textContent = button.text;
+                    btnElement.className = `btn btn-${button.style || 'primary'} btn-sm`;
+                    btnElement.style.fontSize = '0.85em';
+                    btnElement.style.padding = '4px 12px';
+                    btnElement.onclick = () => sendButtonResponse(button.action, button.text, buttonsContainer);
+                    buttonsContainer.appendChild(btnElement);
+                });
+                
+                messageDiv.appendChild(buttonsContainer);
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Send button response
+        async function sendButtonResponse(action, buttonText, buttonsContainer) {
+            // Disable all buttons in this container
+            const buttons = buttonsContainer.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            });
+            
+            // Highlight the clicked button
+            event.target.style.backgroundColor = '#0056b3';
+            event.target.style.borderColor = '#0056b3';
+            
+            // Add user response to chat (showing which button was clicked)
+            addMessageToUI(`Selected: ${buttonText}`, 'user');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            isWaiting = true;
+            
+            try {
+                const response = await fetch('/api/chat/button', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: action })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Hide typing indicator and add bot response
+                    setTimeout(() => {
+                        hideTypingIndicator();
+                        addMessageToUI(data.message, 'bot', data.buttons);
+                        isWaiting = false;
+                    }, 1000);
+                } else {
+                    hideTypingIndicator();
+                    addMessageToUI('Sorry, I encountered an error. Please try again.', 'bot');
+                    isWaiting = false;
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessageToUI('Sorry, I\'m having trouble connecting. Please check your connection and try again.', 'bot');
+                isWaiting = false;
+            }
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = 'flex';
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            indicator.style.display = 'none';
+        }
+        
+        // Enter key handler
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Handle special commands
+        document.getElementById('messageInput').addEventListener('input', function(e) {
+            const value = e.target.value.toLowerCase();
+            if (value === 'help') {
+                setTimeout(() => {
+                    e.target.value = '';
+                    addMessageToUI('help', 'user');
+                    addMessageToUI(`Here's how I can help you:
+
+• Describe any IT issue you're experiencing
+• I'll search for existing solutions first
+• If none found, I can provide AI-powered suggestions
+• I can create support tickets when needed
+• I understand variations like "printer not working" = "printer is not working"
+
+Examples of issues I can help with:
+- Hardware: printer, computer, network problems
+- Software: application crashes, login issues
+- Access: email, file sharing, password problems
+
+Just type your issue naturally!`, 'bot');
+                }, 100);
+            }
+        });
+        
+        // Clear chat history function
+        async function clearChatHistory() {
+            if (confirm('Are you sure you want to clear the chat history? This cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/chat/clear', {
+                        method: 'POST'
+                    });
+                    
+                    if (response.ok) {
+                        // Clear UI
+                        const messagesContainer = document.getElementById('chatMessages');
+                        messagesContainer.innerHTML = `
+                            <div class="welcome-message">
+                                <i class="fas fa-comments text-primary"></i>
+                                <p>Welcome! Please describe your IT issue, and I'll help you find a solution.</p>
+                                <small>For example: "printer not working", "can't access email", "computer running slow"</small>
+                            </div>
+                        `;
+                    } else {
+                        alert('Failed to clear chat history. Please try again.');
+                    }
+                } catch (error) {
+                    alert('Error clearing chat history. Please try again.');
+                }
+            }
+        }
+        
+        // Auto-resize input
+        document.getElementById('messageInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
         });
     </script>
 </body>

@@ -46,83 +46,6 @@ public class IncidentController {
         }
     }
 
-    // Suggestion UI GET
-    @GetMapping("/suggestion-ui")
-    public String suggestionPage(Model model) {
-        model.addAttribute("incident", new Incident());
-        // Get all incident descriptions for dropdown
-        List<String> incidentDescriptions = incidentService.getAllIncidents()
-                .stream()
-                .map(Incident::getDescription)
-                .distinct()
-                .collect(Collectors.toList());
-        model.addAttribute("incidentDescriptions", incidentDescriptions);
-        return "suggestions";
-    }
-
-    // Suggestion POST
-    @PostMapping("/suggestion")
-    public String getSuggestion(@ModelAttribute Incident incident, Model model) {
-        // Find all suggestions (solutions) for any keyword in the incident description
-        List<Incident> solutions = incidentService.findSolutions(incident.getDescription());
-        solutions.forEach(s -> System.out.println("Solutions : "+s));
-        List<Incident> relevantIncidents = incidentService.getAllIncidents();
-        relevantIncidents.forEach(inc -> System.out.println("All Incidents : "+inc));
-        // Filter solutions where the description matches (case-insensitive)
-        String inputDescription = incident.getDescription().toLowerCase();
-        List<Incident> relevantSolutions = solutions.stream()
-                .filter(s -> s.getDescription() != null && 
-                           (s.getDescription().toLowerCase().contains(inputDescription) ||
-                            inputDescription.contains(s.getDescription().toLowerCase())))
-                .collect(Collectors.toList());
-                relevantSolutions.forEach(s -> System.out.println("Relevant Solutions : "+s));
-        
-        List<String> suggestions = relevantSolutions.stream()
-            .map(Incident::getSolution)
-            .filter(sol -> sol != null && !sol.isEmpty())
-            .distinct()
-            .collect(Collectors.toList());
-            suggestions.forEach(s -> System.out.println("Suggestions: "+s));
-
-        // If no existing solutions found, get AI suggestion
-        String aiSuggestion = null;
-        if (suggestions.isEmpty()) {
-            aiSuggestion = openAISuggestionService.getSuggestion(incident.getDescription());
-        }
-
-        model.addAttribute("incident", incident);
-        model.addAttribute("suggestions", suggestions);
-        model.addAttribute("aiSuggestion", aiSuggestion);
-        // Repopulate incidentDescriptions for dropdown
-        List<String> incidentDescriptions = incidentService.getAllIncidents()
-                .stream()
-                .map(Incident::getDescription)
-                .distinct()
-                .collect(Collectors.toList());
-                incidentDescriptions.forEach(desc -> System.out.println("Incident Description: "+desc));
-        model.addAttribute("incidentDescriptions", incidentDescriptions);
-        return "suggestions";
-    }
-
-    // Manual solution POST
-    @PostMapping("/manual-solution")
-    public String submitManualSolution(@RequestParam String description, @RequestParam String manualSolution, Model model) {
-        // Save manual solution as a new incident or update existing
-        Incident incident = incidentService.handleIncident(description);
-        incidentService.updateIncidentSolution(incident.getId(), manualSolution);
-        model.addAttribute("incident", incident);
-        model.addAttribute("manualSolution", manualSolution);
-        model.addAttribute("successMessage", "Solution saved successfully!");
-        // Repopulate incidentDescriptions for dropdown
-        List<String> incidentDescriptions = incidentService.getAllIncidents()
-                .stream()
-                .map(Incident::getDescription)
-                .distinct()
-                .collect(Collectors.toList());
-        model.addAttribute("incidentDescriptions", incidentDescriptions);
-        return "suggestions";
-    }    
-
     @GetMapping("/solutions")
     @ResponseBody // Still return JSON for API
     public ResponseEntity<List<Incident>> getIncidentSolutions(@RequestParam String description) {
@@ -175,6 +98,31 @@ public class IncidentController {
         }
     }
 
+    @PostMapping("/{id}/solution-update")
+    @ResponseBody
+    public ResponseEntity<Incident> addSolutionUpdate(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload) {
+        String update = payload.get("update");
+        Incident updated = incidentService.addSolutionUpdate(id, update);
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/{id}/close")
+    @ResponseBody
+    public ResponseEntity<Incident> closeIncident(@PathVariable Long id) {
+        Incident closed = incidentService.closeIncident(id);
+        if (closed != null) {
+            return ResponseEntity.ok(closed);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     // Thymeleaf UI endpoint (no @ResponseBody)
     @GetMapping("/solutions-ui")
     public String solutionsPage(@RequestParam(required = false) String description, Model model) {
@@ -193,19 +141,8 @@ public class IncidentController {
         // Find or create incident by description and update its solution
         Incident incident = incidentService.handleIncident(incidentDescription);
         incidentService.updateIncidentSolution(incident.getId(), solution);
-        // Redirect to the solutions UI, optionally with the current description filter
-        if (description != null && !description.isEmpty()) {
-            return "redirect:/api/incidents/solutions-ui?description=" + description;
-        }
-        return "redirect:/api/incidents/solutions-ui";
-    }
-
-    // Select suggestion and update solution
-    @PostMapping("/select-suggestion")
-    public String selectSuggestion(@RequestParam String description, @RequestParam String selectedSuggestion, Model model) {
-        Incident incident = incidentService.handleIncident(description);
-        incidentService.updateIncidentSolution(incident.getId(), selectedSuggestion);
-        return "redirect:/api/incidents/solutions-ui?description=" + description;
+        // Redirect back to the table page where the user was
+        return "redirect:/api/incidents/table";
     }
 
     // Table view endpoint
@@ -231,13 +168,17 @@ public class IncidentController {
         
         // Apply status filter
         if (status != null && !status.isEmpty()) {
-            if ("solved".equals(status)) {
+            if ("closed".equals(status)) {
                 filteredIncidents = filteredIncidents.stream()
-                    .filter(incident -> incident.getSolution() != null && !incident.getSolution().trim().isEmpty())
+                    .filter(incident -> "CLOSED".equals(incident.getStatus()))
                     .collect(Collectors.toList());
-            } else if ("pending".equals(status)) {
+            } else if ("open".equals(status)) {
                 filteredIncidents = filteredIncidents.stream()
-                    .filter(incident -> incident.getSolution() == null || incident.getSolution().trim().isEmpty())
+                    .filter(incident -> "OPEN".equals(incident.getStatus()) || incident.getStatus() == null)
+                    .collect(Collectors.toList());
+            } else if ("in_progress".equals(status)) {
+                filteredIncidents = filteredIncidents.stream()
+                    .filter(incident -> "IN_PROGRESS".equals(incident.getStatus()))
                     .collect(Collectors.toList());
             }
         }
@@ -257,18 +198,24 @@ public class IncidentController {
         
         // Calculate statistics
         long totalIncidents = allIncidents.size();
-        long solvedIncidents = allIncidents.stream()
-            .filter(incident -> incident.getSolution() != null && !incident.getSolution().trim().isEmpty())
+        long closedIncidents = allIncidents.stream()
+            .filter(incident -> "CLOSED".equals(incident.getStatus()))
             .count();
-        long pendingIncidents = totalIncidents - solvedIncidents;
+        long inProgressIncidents = allIncidents.stream()
+            .filter(incident -> "IN_PROGRESS".equals(incident.getStatus()))
+            .count();
+        long openIncidents = allIncidents.stream()
+            .filter(incident -> "OPEN".equals(incident.getStatus()) || incident.getStatus() == null)
+            .count();
         long subIncidents = allIncidents.stream()
             .filter(incident -> incident.getParentIncidentId() != null)
             .count();
         
         model.addAttribute("incidents", filteredIncidents);
         model.addAttribute("totalIncidents", totalIncidents);
-        model.addAttribute("solvedIncidents", solvedIncidents);
-        model.addAttribute("pendingIncidents", pendingIncidents);
+        model.addAttribute("closedIncidents", closedIncidents);
+        model.addAttribute("inProgressIncidents", inProgressIncidents);
+        model.addAttribute("openIncidents", openIncidents);
         model.addAttribute("subIncidents", subIncidents);
         model.addAttribute("searchTerm", search);
         model.addAttribute("status", status);

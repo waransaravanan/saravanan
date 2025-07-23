@@ -2,90 +2,339 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Manage Incident Solutions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Tracker - Solutions Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-        th, td { border: 1px solid #ccc; padding: 8px; }
-        th { background: #f0f0f0; }
-        input[type="text"] { width: 90%; }
-        button { padding: 4px 10px; }
+        .incident-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        .incident-card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .incident-number {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.1em;
+        }
+        .status-solved {
+            border-left-color: #28a745;
+        }
+        .status-pending {
+            border-left-color: #ffc107;
+        }
+        .solution-text {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .no-solution {
+            color: #6c757d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <h2>Incident Solutions Management</h2>
-    
-    <!-- Navigation Links -->
-    <div style="margin-bottom: 20px; text-align: center;">
-        <a href="/api/incidents/table" style="text-decoration: none; background: #007bff; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">View All Incidents</a>
-        <a href="/api/incidents/suggestion-ui" style="text-decoration: none; background: #28a745; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Get Suggestions</a>
-        <a href="/chat" style="text-decoration: none; background: #6c757d; color: white; padding: 8px 16px; border-radius: 4px; margin: 0 5px;">Chat Interface</a>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4 text-center">
+                    <i class="fas fa-clipboard-list"></i> 
+                    Incident Tracker - Solutions Management
+                </h2>
+                
+                <!-- Navigation Links -->
+                <div class="mb-4 text-center">
+                    <a href="/api/incidents/table" class="btn btn-primary me-2">
+                        <i class="fas fa-table"></i> View All Incidents
+                    </a>
+                    <a href="/chat" class="btn btn-secondary">
+                        <i class="fas fa-comments"></i> Chat Interface
+                    </a>
+                </div>
+                
+                <!-- Search Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-filter"></i> Filter Incidents
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" th:action="@{/api/incidents/solutions-ui}">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" id="search" name="description" 
+                                           placeholder="Search by incident description..." th:value="${description}">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Incidents List -->
+                <div th:if="${incidents != null and !incidents.isEmpty()}">
+                    <div class="row">
+                        <div th:each="incident : ${incidents}" class="col-12 mb-3">
+                            <div class="card incident-card" 
+                                 th:classappend="${incident.solution != null and !incident.solution.isEmpty()} ? 'status-solved' : 'status-pending'">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="incident-number" th:text="${incident.incidentNumber ?: ('ID: ' + incident.id)}"></span>
+                                        <small class="text-muted ms-2" th:if="${incident.createdAt != null}">
+                                            Created: <span th:text="${#temporals.format(incident.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <span class="badge me-2" 
+                                              th:classappend="${incident.status == 'CLOSED'} ? 'bg-secondary' : (${incident.status == 'IN_PROGRESS'} ? 'bg-info' : 'bg-warning text-dark')">
+                                            <span th:if="${incident.status == 'CLOSED'}">
+                                                <i class="fas fa-lock"></i> <span th:text="${incident.status}"></span>
+                                            </span>
+                                            <span th:if="${incident.status == 'IN_PROGRESS'}">
+                                                <i class="fas fa-cogs"></i> <span th:text="${incident.status}"></span>
+                                            </span>
+                                            <span th:if="${incident.status == 'OPEN'}">
+                                                <i class="fas fa-clock"></i> <span th:text="${incident.status}"></span>
+                                            </span>
+                                        </span>
+                                        <span class="badge" 
+                                              th:classappend="${incident.solution != null and !incident.solution.isEmpty()} ? 'bg-success' : 'bg-warning text-dark'">
+                                            <span th:if="${incident.solution != null and !incident.solution.isEmpty()}">
+                                                <i class="fas fa-check-circle"></i> Has Solution
+                                            </span>
+                                            <span th:if="${incident.solution == null or incident.solution.isEmpty()}">
+                                                <i class="fas fa-exclamation-triangle"></i> No Solution
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-exclamation-circle text-warning"></i>
+                                        <strong>Description:</strong>
+                                    </h6>
+                                    <p class="card-text" th:text="${incident.description}"></p>
+                                    
+                                    <h6 class="card-title mt-3">
+                                        <i class="fas fa-lightbulb text-success"></i>
+                                        <strong>Current Solution:</strong>
+                                    </h6>
+                                    <div th:if="${incident.solution != null and !incident.solution.isEmpty()}" 
+                                         class="solution-text">
+                                        <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution}"></span>
+                                    </div>
+                                    <div th:if="${incident.solution == null or incident.solution.isEmpty()}" 
+                                         class="no-solution">
+                                        <span th:id="'solutionDisplay-' + ${incident.id}">No solution provided yet.</span>
+                                    </div>
+                                    
+                                    <!-- Solution History Log -->
+                                    <h6 class="card-title mt-4">
+                                        <i class="fas fa-history text-info"></i>
+                                        <strong>Solution History:</strong>
+                                    </h6>
+                                    <div class="solution-log" 
+                                         style="max-height: 200px; overflow-y: auto; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
+                                        <div th:if="${incident.solutionLog != null and !incident.solutionLog.isEmpty()}">
+                                            <div th:each="logEntry : ${incident.solutionLog}" class="log-entry mb-1">
+                                                <small th:text="${logEntry}" class="text-muted"></small>
+                                            </div>
+                                        </div>
+                                        <div th:if="${incident.solutionLog == null or incident.solutionLog.isEmpty()}" class="text-muted">
+                                            <small>No history available.</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Update Solution Form -->
+                                    <div class="mt-3" th:if="${incident.status != 'CLOSED'}">
+                                        <label th:for="'solutionInput-' + ${incident.id}" class="form-label">
+                                            <strong>Add Solution Update:</strong>
+                                        </label>
+                                        <div class="input-group mb-2">
+                                            <textarea class="form-control" th:id="'solutionInput-' + ${incident.id}" 
+                                                    rows="2" placeholder="Enter solution update for this incident..."></textarea>
+                                            <button class="btn btn-success" type="button" 
+                                                    th:onclick="'addSolutionUpdate(' + ${incident.id} + ')'">
+                                                <i class="fas fa-plus"></i> Add Update
+                                            </button>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-danger" type="button" 
+                                                    th:onclick="'confirmCloseTicket(' + ${incident.id} + ')'">
+                                                <i class="fas fa-times-circle"></i> Close Ticket
+                                            </button>
+                                            <small class="text-muted align-self-center">
+                                                Note: Adding updates will not automatically close the ticket.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3" th:if="${incident.status == 'CLOSED'}">
+                                        <div class="alert alert-secondary">
+                                            <i class="fas fa-lock"></i> This ticket is closed. 
+                                            <span th:if="${incident.closedAt != null}">
+                                                Closed on <span th:text="${#temporals.format(incident.closedAt, 'yyyy-MM-dd HH:mm')}"></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- No Incidents Found -->
+                <div th:if="${incidents == null or incidents.isEmpty()}" class="text-center mt-5">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> No Incidents Found</h5>
+                        <p th:if="${description != null and !description.isEmpty()}">
+                            No incidents found matching "<strong th:text="${description}"></strong>".
+                        </p>
+                        <p th:if="${description == null or description.isEmpty()}">
+                            No incidents available in the system.
+                        </p>
+                        <a href="/chat" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create New Incident
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Close Ticket Confirmation Modal -->
+    <div class="modal fade" id="closeTicketModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-times-circle text-danger"></i> Close Ticket
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Are you sure you want to close this ticket?</strong></p>
+                    <p class="text-muted">Once closed, you won't be able to add more solution updates to this ticket.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Ticket:</strong> <span id="closeTicketModalIncidentNumber"></span><br>
+                        <strong>Description:</strong> <span id="closeTicketModalDescription"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmCloseButton">
+                        <i class="fas fa-times-circle"></i> Yes, Close Ticket
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
     
-    <form method="get" th:action="@{/api/incidents/solutions-ui}">
-        <label for="search">Search by Description:</label>
-        <input type="text" id="search" name="description" placeholder="Enter description..." th:value="${description}">
-        <button type="submit">Search</button>
-    </form>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Description</th>
-                <th>Solution</th>
-                <th>Update Solution</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="incident : ${incidents}">
-                <td th:text="${incident.id}"></td>
-                <td th:text="${incident.description}"></td>
-                <td>
-                    <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution} ?: ''"></span>
-                </td>
-                <td>
-                    <input type="text" th:id="'solutionInput-' + ${incident.id}" placeholder="New solution"/>
-                    <button type="button" th:onclick="'updateSolution(' + ${incident.id} + ')'">Update</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</body>
-<script>
-function updateSolution(incidentId) {
+    <script>
+let currentIncidentId = null;
+
+function addSolutionUpdate(incidentId) {
     const inputId = 'solutionInput-' + incidentId;
-    const displayId = 'solutionDisplay-' + incidentId;
-    const solution = document.getElementById(inputId).value.trim();
-    if (!solution) {
-        alert('Please enter a solution.');
+    const update = document.getElementById(inputId).value.trim();
+    if (!update) {
+        alert('Please enter a solution update.');
         return;
     }
-    fetch(`/api/incidents/${incidentId}/solution`, {
-        method: 'PUT',
+    
+    fetch(`/api/incidents/${incidentId}/solution-update`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solution: solution })
+        body: JSON.stringify({ update: update })
     })
     .then(response => response.json())
     .then(data => {
-        document.getElementById(displayId).innerText = data.solution;
         document.getElementById(inputId).value = '';
-        alert('Solution updated!');
+        alert('Solution update added successfully!');
+        
+        // Reload page to show updated history
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
     })
-    .catch(() => alert('Failed to update solution.'));
+    .catch(() => alert('Failed to add solution update.'));
+}
+
+function confirmCloseTicket(incidentId) {
+    currentIncidentId = incidentId;
+    
+    // Find incident data from the page
+    const card = document.getElementById('solutionInput-' + incidentId).closest('.card');
+    const incidentNumber = card.querySelector('.incident-number').textContent;
+    const description = card.querySelector('.card-text').textContent;
+    
+    // Populate modal
+    document.getElementById('closeTicketModalIncidentNumber').textContent = incidentNumber;
+    document.getElementById('closeTicketModalDescription').textContent = description;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('closeTicketModal'));
+    modal.show();
+}
+
+function closeTicket(incidentId) {
+    fetch(`/api/incidents/${incidentId}/close`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Ticket closed successfully!');
+        
+        // Hide modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('closeTicketModal'));
+        modal.hide();
+        
+        // Reload page to show updated status
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    })
+    .catch(() => alert('Failed to close ticket.'));
+}
+
+// Legacy function for backward compatibility (if needed)
+function updateSolution(incidentId) {
+    addSolutionUpdate(incidentId);
 }
 
 // Add Enter key support for all solution inputs
 document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('input[id^="solutionInput-"]').forEach(function(input) {
+    document.querySelectorAll('textarea[id^="solutionInput-"]').forEach(function(input) {
         input.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && event.ctrlKey) {
                 event.preventDefault();
                 // Extract incidentId from input's id
                 const incidentId = this.id.split('-')[1];
-                updateSolution(incidentId);
+                addSolutionUpdate(incidentId);
             }
         });
     });
+    
+    // Add click handler for confirm close button
+    document.getElementById('confirmCloseButton').addEventListener('click', function() {
+        if (currentIncidentId) {
+            closeTicket(currentIncidentId);
+        }
+    });
 });
 </script>
+</body>
 </html>

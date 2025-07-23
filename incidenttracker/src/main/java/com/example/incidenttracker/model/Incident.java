@@ -1,10 +1,9 @@
 package com.example.incidenttracker.model;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Incident {
@@ -12,9 +11,20 @@ public class Incident {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String incidentNumber; // Format: INC-XXXX
     private String description;
     private String solution;
     private Long parentIncidentId; // null for main incidents, set for subtasks
+    
+    // New fields for enhanced ticketing
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime closedAt;
+    private String status; // OPEN, IN_PROGRESS, CLOSED
+    
+    @ElementCollection
+    @CollectionTable(name = "incident_solution_log", joinColumns = @JoinColumn(name = "incident_id"))
+    private List<String> solutionLog = new ArrayList<>();
 
 
 
@@ -49,5 +59,60 @@ public class Incident {
 
     public void setParentIncidentId(Long parentIncidentId) {
         this.parentIncidentId = parentIncidentId;
+    }
+
+    public String getIncidentNumber() {
+        return incidentNumber;
+    }
+
+    public void setIncidentNumber(String incidentNumber) {
+        this.incidentNumber = incidentNumber;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public List<String> getSolutionLog() {
+        return solutionLog;
+    }
+
+    public void setSolutionLog(List<String> solutionLog) {
+        this.solutionLog = solutionLog;
+    }
+
+    public void addSolutionLogEntry(String entry) {
+        if (this.solutionLog == null) {
+            this.solutionLog = new ArrayList<>();
+        }
+        this.solutionLog.add(entry);
     }
 }

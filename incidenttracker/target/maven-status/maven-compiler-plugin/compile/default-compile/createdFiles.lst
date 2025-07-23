@@ -1,7 +1,13 @@
-com/example/incidenttracker/controller/ChatController.class
+com/example/incidenttracker/service/ChatService$ChatSession.class
+com/example/incidenttracker/service/ChatService.class
+com/example/incidenttracker/service/ChatService$ChatResponse.class
 com/example/incidenttracker/repository/IncidentRepository.class
 com/example/incidenttracker/IncidentTrackerApplication.class
 com/example/incidenttracker/service/IncidentService.class
 com/example/incidenttracker/controller/IncidentController.class
 com/example/incidenttracker/service/OpenAISuggestionService.class
+com/example/incidenttracker/service/ChatService$ChatMessage.class
 com/example/incidenttracker/model/Incident.class
+com/example/incidenttracker/controller/ChatController.class
+com/example/incidenttracker/service/ChatService$ChatState.class
+com/example/incidenttracker/service/ChatService$1.class
