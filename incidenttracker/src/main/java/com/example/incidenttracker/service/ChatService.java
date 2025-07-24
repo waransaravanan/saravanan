@@ -60,7 +60,7 @@ public class ChatService {
     }
     
     private ChatResponse handleConversation(ChatSession session, String message) {
-        String lowerMessage = message.toLowerCase();
+        var lowerMessage = message.toLowerCase();
         
         switch (session.getState()) {
             case INITIAL:
@@ -124,7 +124,7 @@ public class ChatService {
     
     private ChatResponse handleHelpYes(ChatSession session) {
         session.setState(ChatState.WAITING_FOR_OTHER_ISSUES);
-        List<ChatButton> buttons = Arrays.asList(
+        var buttons = List.of(
             new ChatButton("Yes", "other_issues_yes", "primary"),
             new ChatButton("No", "other_issues_no", "secondary")
         );
@@ -163,12 +163,12 @@ public class ChatService {
         
         if (!existingSolutions.isEmpty()) {
             // Found existing solutions
-            StringBuilder solutionsBuilder = new StringBuilder();
+            var solutionsBuilder = new StringBuilder();
             
-            for (Incident inc : existingSolutions) {
-                String incidentNumber = inc.getIncidentNumber() != null ? inc.getIncidentNumber() : "ID: " + inc.getId();
-                String encodedDescription = inc.getDescription().replace(" ", "%20");
-                String solutionsUrl = "https://bug-free-broccoli-w9v9xj7w55q2pq4-8080.app.github.dev/api/incidents/solutions-ui?description=" + encodedDescription;
+            for (var inc : existingSolutions) {
+                var incidentNumber = inc.getIncidentNumber() != null ? inc.getIncidentNumber() : "ID: " + inc.getId();
+                var encodedDescription = inc.getDescription().replace(" ", "%20");
+                var solutionsUrl = "https://bug-free-broccoli-w9v9xj7w55q2pq4-8080.app.github.dev/api/incidents/solutions-ui?description=" + encodedDescription;
                 
                 solutionsBuilder.append("🎫 **[").append(incidentNumber).append("](").append(solutionsUrl).append(")** - ")
                     .append(inc.getStatus() != null ? inc.getStatus() : "UNKNOWN").append("\n");
@@ -182,11 +182,11 @@ public class ChatService {
                 // Show recent solution log entries (limited to first 3 with ellipsis if more)
                 if (inc.getSolutionLog() != null && !inc.getSolutionLog().isEmpty()) {
                     solutionsBuilder.append("📋 Recent updates:\n");
-                    List<String> relevantLogs = inc.getSolutionLog().stream()
+                    var relevantLogs = inc.getSolutionLog().stream()
                         .filter(log -> log.toLowerCase().contains("solution") || log.toLowerCase().contains("update"))
                         .collect(Collectors.toList());
                     
-                    int logsToShow = Math.min(3, relevantLogs.size());
+                    var logsToShow = Math.min(3, relevantLogs.size());
                     for (int i = 0; i < logsToShow; i++) {
                         solutionsBuilder.append("   • ").append(relevantLogs.get(i)).append("\n");
                     }
@@ -201,7 +201,7 @@ public class ChatService {
             }
             
             session.setState(ChatState.EXISTING_SOLUTION_FOUND);
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "help_yes", "success"),
                 new ChatButton("No", "help_no", "danger")
             );
@@ -214,7 +214,7 @@ public class ChatService {
         } else {
             // No existing solutions found
             session.setState(ChatState.WAITING_FOR_AI_CONFIRMATION);
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ai_suggestion_yes", "primary"),
                 new ChatButton("No", "ai_suggestion_no", "secondary")
             );
@@ -235,7 +235,7 @@ public class ChatService {
             session.addPreviousAiSuggestion(aiSuggestion);
             session.setState(ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE);
             
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ai_helpful_yes", "success"),
                 new ChatButton("No", "ai_helpful_no", "danger")
             );
@@ -248,7 +248,7 @@ public class ChatService {
         } else if (isNegativeResponse(message)) {
             // User doesn't want AI suggestion
             session.setState(ChatState.WAITING_FOR_TICKET_CONFIRMATION);
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ticket_yes", "primary"),
                 new ChatButton("No", "ticket_no", "secondary")
             );
@@ -259,7 +259,7 @@ public class ChatService {
             );
         } else {
             // Unclear response - ask again with buttons
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ai_suggestion_yes", "primary"),
                 new ChatButton("No", "ai_suggestion_no", "secondary")
             );
@@ -279,7 +279,7 @@ public class ChatService {
             incidentService.updateIncidentSolution(incident.getId(), session.getCurrentAiSuggestion());
             session.setState(ChatState.SESSION_CLOSED);
             
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "other_issues_yes", "primary"),
                 new ChatButton("No", "other_issues_no", "secondary")
             );
@@ -292,7 +292,7 @@ public class ChatService {
         } else if (isNegativeResponse(message)) {
             // AI suggestion wasn't helpful - provide options
             session.setState(ChatState.WAITING_FOR_OPTION_SELECTION);
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("1. Try another AI suggestion", "option_1", "primary"),
                 new ChatButton("2. Create support ticket", "option_2", "warning"),
                 new ChatButton("3. Close session", "option_3", "secondary")
@@ -304,7 +304,7 @@ public class ChatService {
             );
         } else {
             // Unclear response - ask again with buttons
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ai_helpful_yes", "success"),
                 new ChatButton("No", "ai_helpful_no", "danger")
             );
@@ -329,7 +329,7 @@ public class ChatService {
                 session.addPreviousAiSuggestion(aiSuggestion);
                 session.setState(ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE);
                 
-                List<ChatButton> buttons1 = Arrays.asList(
+                var buttons1 = List.of(
                     new ChatButton("Yes", "ai_helpful_yes", "success"),
                     new ChatButton("No", "ai_helpful_no", "danger")
                 );
@@ -343,7 +343,7 @@ public class ChatService {
             case "2":
                 // Create support ticket
                 session.setState(ChatState.WAITING_FOR_TICKET_CONFIRMATION);
-                List<ChatButton> buttons2 = Arrays.asList(
+                var buttons2 = List.of(
                     new ChatButton("Yes", "ticket_yes", "primary"),
                     new ChatButton("No", "ticket_no", "secondary")
                 );
@@ -356,7 +356,7 @@ public class ChatService {
             case "3":
                 // Close session
                 session.setState(ChatState.SESSION_CLOSED);
-                List<ChatButton> buttons3 = Arrays.asList(
+                var buttons3 = List.of(
                     new ChatButton("Yes", "other_issues_yes", "primary"),
                     new ChatButton("No", "other_issues_no", "secondary")
                 );
@@ -368,7 +368,7 @@ public class ChatService {
                 
             default:
                 // Invalid option - show buttons again
-                List<ChatButton> buttonsDefault = Arrays.asList(
+                var buttonsDefault = List.of(
                     new ChatButton("1. Try another AI suggestion", "option_1", "primary"),
                     new ChatButton("2. Create support ticket", "option_2", "warning"),
                     new ChatButton("3. Close session", "option_3", "secondary")
@@ -384,10 +384,10 @@ public class ChatService {
     private ChatResponse handleTicketConfirmation(ChatSession session, String message) {
         if (isPositiveResponse(message)) {
             // Create ticket
-            Incident incident = incidentService.createIncidentWithoutSolution(session.getCurrentIncidentDescription());
+            var incident = incidentService.createIncidentWithoutSolution(session.getCurrentIncidentDescription());
             session.setState(ChatState.SESSION_CLOSED);
             
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "other_issues_yes", "primary"),
                 new ChatButton("No", "other_issues_no", "secondary")
             );
@@ -403,7 +403,7 @@ public class ChatService {
         } else if (isNegativeResponse(message)) {
             // User doesn't want ticket
             session.setState(ChatState.SESSION_CLOSED);
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "other_issues_yes", "primary"),
                 new ChatButton("No", "other_issues_no", "secondary")
             );
@@ -416,7 +416,7 @@ public class ChatService {
             );
         } else {
             // Unclear response - ask again with buttons
-            List<ChatButton> buttons = Arrays.asList(
+            var buttons = List.of(
                 new ChatButton("Yes", "ticket_yes", "primary"),
                 new ChatButton("No", "ticket_no", "secondary")
             );
@@ -459,8 +459,8 @@ public class ChatService {
     
     private List<Incident> findSimilarSolutions(String description) {
         // Enhanced contextual similarity matching
-        List<Incident> allIncidents = incidentService.getAllIncidents();
-        List<String> meaningfulKeywords = extractMeaningfulKeywords(description);
+        var allIncidents = incidentService.getAllIncidents();
+        var meaningfulKeywords = extractMeaningfulKeywords(description);
         
         // If no meaningful keywords found, return empty list
         if (meaningfulKeywords.isEmpty()) {
@@ -473,10 +473,10 @@ public class ChatService {
                 // 1. A solution in the main solution field, OR
                 // 2. Solution updates in the log (solutionLog), OR  
                 // 3. Are closed tickets (likely have solutions)
-                boolean hasSolution = incident.getSolution() != null && !incident.getSolution().trim().isEmpty();
-                boolean hasSolutionLog = incident.getSolutionLog() != null && !incident.getSolutionLog().isEmpty() && 
+                var hasSolution = incident.getSolution() != null && !incident.getSolution().trim().isEmpty();
+                var hasSolutionLog = incident.getSolutionLog() != null && !incident.getSolutionLog().isEmpty() && 
                     incident.getSolutionLog().stream().anyMatch(log -> log.toLowerCase().contains("solution") || log.toLowerCase().contains("update"));
-                boolean isClosedWithActivity = "CLOSED".equals(incident.getStatus()) || "IN_PROGRESS".equals(incident.getStatus());
+                var isClosedWithActivity = "CLOSED".equals(incident.getStatus()) || "IN_PROGRESS".equals(incident.getStatus());
                 
                 return hasSolution || hasSolutionLog || isClosedWithActivity;
             })
@@ -486,13 +486,13 @@ public class ChatService {
             })
             .sorted((i1, i2) -> {
                 // Sort by similarity score combined with solution score
-                double similarity1 = calculateContextualSimilarity(description, i1.getDescription());
-                double similarity2 = calculateContextualSimilarity(description, i2.getDescription());
-                int solutionScore1 = calculateSolutionScore(i1);
-                int solutionScore2 = calculateSolutionScore(i2);
+                var similarity1 = calculateContextualSimilarity(description, i1.getDescription());
+                var similarity2 = calculateContextualSimilarity(description, i2.getDescription());
+                var solutionScore1 = calculateSolutionScore(i1);
+                var solutionScore2 = calculateSolutionScore(i2);
                 
-                double totalScore1 = similarity1 * 10 + solutionScore1;
-                double totalScore2 = similarity2 * 10 + solutionScore2;
+                var totalScore1 = similarity1 * 10 + solutionScore1;
+                var totalScore2 = similarity2 * 10 + solutionScore2;
                 
                 return Double.compare(totalScore2, totalScore1); // Higher score first
             })
@@ -502,22 +502,22 @@ public class ChatService {
     
     private double calculateContextualSimilarity(String query, String incidentDescription) {
         // Normalize both strings
-        String normalizedQuery = normalizeText(query);
-        String normalizedIncident = normalizeText(incidentDescription);
+        var normalizedQuery = normalizeText(query);
+        var normalizedIncident = normalizeText(incidentDescription);
         
         // Extract domain-specific keywords
-        List<String> queryKeywords = extractMeaningfulKeywords(normalizedQuery);
-        List<String> incidentKeywords = extractMeaningfulKeywords(normalizedIncident);
+        var queryKeywords = extractMeaningfulKeywords(normalizedQuery);
+        var incidentKeywords = extractMeaningfulKeywords(normalizedIncident);
         
         if (queryKeywords.isEmpty() || incidentKeywords.isEmpty()) {
             return 0.0;
         }
         
         // Calculate keyword overlap with domain context
-        double keywordScore = calculateKeywordOverlap(queryKeywords, incidentKeywords);
+        var keywordScore = calculateKeywordOverlap(queryKeywords, incidentKeywords);
         
         // Bonus for exact phrase matches
-        double phraseScore = calculatePhraseMatches(normalizedQuery, normalizedIncident);
+        var phraseScore = calculatePhraseMatches(normalizedQuery, normalizedIncident);
         
         // Combine scores
         return Math.min(1.0, keywordScore * 0.7 + phraseScore * 0.3);
@@ -531,27 +531,27 @@ public class ChatService {
     }
     
     private double calculateKeywordOverlap(List<String> queryKeywords, List<String> incidentKeywords) {
-        Set<String> querySet = new HashSet<>(queryKeywords);
-        Set<String> incidentSet = new HashSet<>(incidentKeywords);
+        var querySet = new HashSet<>(queryKeywords);
+        var incidentSet = new HashSet<>(incidentKeywords);
         
         // Find intersection
-        Set<String> intersection = new HashSet<>(querySet);
+        var intersection = new HashSet<>(querySet);
         intersection.retainAll(incidentSet);
         
         // Calculate Jaccard similarity
-        Set<String> union = new HashSet<>(querySet);
+        var union = new HashSet<>(querySet);
         union.addAll(incidentSet);
         
         return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
     }
     
     private double calculatePhraseMatches(String query, String incident) {
-        String[] queryWords = query.split("\\s+");
-        double score = 0.0;
+        var queryWords = query.split("\\s+");
+        var score = 0.0;
         
         // Check for exact phrase matches (2+ words)
         for (int i = 0; i < queryWords.length - 1; i++) {
-            String phrase = queryWords[i] + " " + queryWords[i + 1];
+            var phrase = queryWords[i] + " " + queryWords[i + 1];
             if (incident.contains(phrase)) {
                 score += 0.5; // Bonus for each phrase match
             }
@@ -562,11 +562,11 @@ public class ChatService {
     
     private List<String> extractMeaningfulKeywords(String description) {
         // Extract only meaningful IT-related keywords, excluding generic words
-        String[] words = description.toLowerCase().split("\\s+");
-        List<String> keywords = new ArrayList<>();
+        var words = description.toLowerCase().split("\\s+");
+        var keywords = new ArrayList<String>();
         
         // Define stop words to exclude
-        Set<String> stopWords = Set.of(
+        var stopWords = Set.of(
             "issue", "problem", "not", "working", "error", "trouble", "help", 
             "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
             "have", "has", "had", "do", "does", "did", "will", "would", "could", "should",
@@ -574,26 +574,26 @@ public class ChatService {
         );
         
         // Domain-specific meaningful terms
-        Map<String, List<String>> domainTerms = Map.of(
-            "printer", Arrays.asList("printer", "printing", "print", "inkjet", "laser"),
-            "monitor", Arrays.asList("monitor", "display", "screen", "lcd", "led", "resolution"),
-            "network", Arrays.asList("network", "internet", "wifi", "ethernet", "connection", "router"),
-            "computer", Arrays.asList("computer", "pc", "laptop", "desktop", "cpu", "hardware"),
-            "software", Arrays.asList("software", "application", "app", "program", "install"),
-            "login", Arrays.asList("login", "password", "authentication", "sso", "signin", "access"),
-            "email", Arrays.asList("email", "mail", "outlook", "gmail", "exchange"),
-            "file", Arrays.asList("file", "document", "folder", "share", "storage"),
-            "server", Arrays.asList("server", "database", "web", "api", "service"),
-            "security", Arrays.asList("security", "virus", "malware", "firewall", "antivirus")
+        var domainTerms = Map.of(
+            "printer", List.of("printer", "printing", "print", "inkjet", "laser"),
+            "monitor", List.of("monitor", "display", "screen", "lcd", "led", "resolution"),
+            "network", List.of("network", "internet", "wifi", "ethernet", "connection", "router"),
+            "computer", List.of("computer", "pc", "laptop", "desktop", "cpu", "hardware"),
+            "software", List.of("software", "application", "app", "program", "install"),
+            "login", List.of("login", "password", "authentication", "sso", "signin", "access"),
+            "email", List.of("email", "mail", "outlook", "gmail", "exchange"),
+            "file", List.of("file", "document", "folder", "share", "storage"),
+            "server", List.of("server", "database", "web", "api", "service"),
+            "security", List.of("security", "virus", "malware", "firewall", "antivirus")
         );
         
         // Extract meaningful terms
-        for (String word : words) {
+        for (var word : words) {
             // Skip stop words and very short words
             if (!stopWords.contains(word) && word.length() > 2) {
                 // Check if it's a domain-specific term
-                boolean isDomainTerm = false;
-                for (Map.Entry<String, List<String>> entry : domainTerms.entrySet()) {
+                var isDomainTerm = false;
+                for (var entry : domainTerms.entrySet()) {
                     if (entry.getValue().contains(word)) {
                         keywords.add(entry.getKey()); // Add the main category
                         keywords.add(word); // Add the specific term
@@ -636,13 +636,13 @@ public class ChatService {
     }
     
     private boolean isPositiveResponse(String message) {
-        String lower = message.toLowerCase().trim();
+        var lower = message.toLowerCase().strip();
         return lower.matches(".*\\b(yes|y|yeah|yep|sure|ok|okay|fine|alright|good|sounds good|positive|yup|correct|right|true)\\b.*") ||
                lower.equals("yes") || lower.equals("y") || lower.equals("ok") || lower.equals("sure");
     }
     
     private boolean isNegativeResponse(String message) {
-        String lower = message.toLowerCase().trim();
+        var lower = message.toLowerCase().strip();
         return lower.matches(".*\\b(no|n|nope|not|negative|nah|never|false)\\b.*") ||
                lower.equals("no") || lower.equals("n") || lower.equals("nope");
     }

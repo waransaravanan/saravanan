@@ -27,13 +27,13 @@ public class ChatController {
             @RequestBody Map<String, String> payload,
             HttpSession httpSession) {
         
-        String message = payload.get("message");
-        if (message == null || message.trim().isEmpty()) {
+        var message = payload.get("message");
+        if (message == null || message.strip().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         
-        String sessionId = httpSession.getId();
-        ChatService.ChatResponse response = chatService.processMessage(sessionId, message);
+        var sessionId = httpSession.getId();
+        var response = chatService.processMessage(sessionId, message);
         
         return ResponseEntity.ok(response);
     }
@@ -41,15 +41,15 @@ public class ChatController {
     @GetMapping("/api/chat/history")
     @ResponseBody
     public ResponseEntity<List<ChatService.ChatMessage>> getHistory(HttpSession httpSession) {
-        String sessionId = httpSession.getId();
-        List<ChatService.ChatMessage> history = chatService.getConversationHistory(sessionId);
+        var sessionId = httpSession.getId();
+        var history = chatService.getConversationHistory(sessionId);
         return ResponseEntity.ok(history);
     }
     
     @PostMapping("/api/chat/clear")
     @ResponseBody
     public ResponseEntity<String> clearHistory(HttpSession httpSession) {
-        String sessionId = httpSession.getId();
+        var sessionId = httpSession.getId();
         chatService.clearConversationHistory(sessionId);
         return ResponseEntity.ok("History cleared");
     }
@@ -57,7 +57,7 @@ public class ChatController {
     @PostMapping("/api/chat/close")
     @ResponseBody
     public ResponseEntity<String> closeSession(HttpSession httpSession) {
-        String sessionId = httpSession.getId();
+        var sessionId = httpSession.getId();
         chatService.clearSession(sessionId);
         return ResponseEntity.ok("Session closed");
     }
@@ -68,13 +68,13 @@ public class ChatController {
             @RequestBody Map<String, String> payload,
             HttpSession httpSession) {
         
-        String action = payload.get("action");
-        if (action == null || action.trim().isEmpty()) {
+        var action = payload.get("action");
+        if (action == null || action.strip().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         
-        String sessionId = httpSession.getId();
-        ChatService.ChatResponse response = chatService.processButtonAction(sessionId, action);
+        var sessionId = httpSession.getId();
+        var response = chatService.processButtonAction(sessionId, action);
         
         return ResponseEntity.ok(response);
     }

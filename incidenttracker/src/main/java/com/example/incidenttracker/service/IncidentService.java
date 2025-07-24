@@ -44,16 +44,16 @@ public class IncidentService {
     }
 
     public List<Incident> findSolutions(String description) {
-        List<Incident> allIncidents = incidentRepository.findAll();
+        var allIncidents = incidentRepository.findAll();
         
         // If no description filter is provided or it's empty, return all incidents
-        if (description == null || description.trim().isEmpty()) {
+        if (description == null || description.strip().isEmpty()) {
             return allIncidents;
         }
         
         // Filter incidents by description (case-insensitive) and handle null descriptions
-        String searchTerm = description.trim().toLowerCase();
-        List<Incident> relevantIncidents = allIncidents.stream()
+        var searchTerm = description.strip().toLowerCase();
+        var relevantIncidents = allIncidents.stream()
             .filter(incident -> incident.getDescription() != null && 
                               incident.getDescription().toLowerCase().contains(searchTerm))
             .collect(Collectors.toList());
@@ -70,9 +70,9 @@ public class IncidentService {
     }
 
     public Incident handleIncident(String description) {
-        String uniqueDescription = description.trim().toLowerCase();
+        var uniqueDescription = description.strip().toLowerCase();
         // Find incidents with a similar (case-insensitive) description
-        List<Incident> similar = incidentRepository.findByDescriptionIgnoreCase(uniqueDescription);
+        var similar = incidentRepository.findByDescriptionIgnoreCase(uniqueDescription);
 
         // Return the first incident that already has a solution
         return similar.stream()
@@ -80,13 +80,13 @@ public class IncidentService {
                 .findFirst()
                 .orElseGet(() -> {
                     // If not found, create and save a new incident
-                    Incident newIncident = new Incident();
-                    newIncident.setDescription(description.trim());
+                    var newIncident = new Incident();
+                    newIncident.setDescription(description.strip());
                     newIncident.setSolution(null);
                     newIncident.setIncidentNumber(generateIncidentNumber());
                     newIncident.setCreatedAt(LocalDateTime.now());
                     newIncident.setStatus("OPEN");
-                    newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.trim());
+                    newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.strip());
                     newIncident.setUpdatedAt(LocalDateTime.now());
                     return incidentRepository.save(newIncident);
                 });
@@ -94,13 +94,13 @@ public class IncidentService {
 
     public Incident createIncidentWithoutSolution(String description) {
         // Create a new incident without solution (for when user wants to create ticket)
-        Incident newIncident = new Incident();
-        newIncident.setDescription(description.trim());
+        var newIncident = new Incident();
+        newIncident.setDescription(description.strip());
         newIncident.setSolution(null);
         newIncident.setIncidentNumber(generateIncidentNumber());
         newIncident.setCreatedAt(LocalDateTime.now());
         newIncident.setStatus("OPEN");
-        newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.trim());
+        newIncident.addSolutionLogEntry("[" + LocalDateTime.now().format(FORMATTER) + "] Ticket created: " + description.strip());
         newIncident.setUpdatedAt(LocalDateTime.now());
         return incidentRepository.save(newIncident);
     }
@@ -109,7 +109,7 @@ public class IncidentService {
         if (parentIncidentId == null) {
             throw new IllegalArgumentException("Parent incident ID cannot be null");
         }
-        Incident subIncident = new Incident();
+        var subIncident = new Incident();
         subIncident.setDescription(description);
         subIncident.setSolution(null);
         subIncident.setParentIncidentId(parentIncidentId);
@@ -125,7 +125,7 @@ public class IncidentService {
         return incidentRepository.findById(id)
             .map(incident -> {
                 // Add solution to log instead of replacing main solution
-                String logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Solution added: " + solution;
+                var logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Solution added: " + solution;
                 incident.addSolutionLogEntry(logEntry);
                 
                 // Update the main solution field (for display purposes)
@@ -146,7 +146,7 @@ public class IncidentService {
         return incidentRepository.findById(id)
             .map(incident -> {
                 // Add update to log without changing main solution
-                String logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Update: " + update;
+                var logEntry = "[" + LocalDateTime.now().format(FORMATTER) + "] Update: " + update;
                 incident.addSolutionLogEntry(logEntry);
                 incident.setUpdatedAt(LocalDateTime.now());
                 

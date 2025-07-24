@@ -6,7 +6,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 
 import java.util.HashMap;
@@ -35,7 +34,7 @@ public class OpenAISuggestionService {
      */
     public String getSuggestion(String description) {
         // If OpenAI API key is not configured, return a fallback suggestion
-        if (openAiApiKey == null || openAiApiKey.trim().isEmpty()) {
+        if (openAiApiKey == null || openAiApiKey.strip().isEmpty()) {
             return generateFallbackSuggestion(description, null);
         }
 
@@ -56,7 +55,7 @@ public class OpenAISuggestionService {
      */
     public String getAlternativeSuggestion(String description, List<String> previousSuggestions) {
         // If OpenAI API key is not configured, return a fallback suggestion
-        if (openAiApiKey == null || openAiApiKey.trim().isEmpty()) {
+        if (openAiApiKey == null || openAiApiKey.strip().isEmpty()) {
             return generateFallbackSuggestion(description, previousSuggestions);
         }
 
@@ -73,22 +72,22 @@ public class OpenAISuggestionService {
      * Call OpenAI API to get suggestion
      */
     private String callOpenAiApi(String description, List<String> previousSuggestions) {
-        HttpHeaders headers = new HttpHeaders();
+        var headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + openAiApiKey);
         headers.set("Content-Type", "application/json");
 
-        Map<String, Object> requestBody = new HashMap<>();
+        var requestBody = new HashMap<String, Object>();
         requestBody.put("model", "gpt-3.5-turbo");
         requestBody.put("max_tokens", 150);
         requestBody.put("temperature", 0.9); // Higher temperature for more variety
 
         // Create messages array
-        Map<String, String> systemMessage = new HashMap<>();
+        var systemMessage = new HashMap<String, String>();
         systemMessage.put("role", "system");
         systemMessage.put("content", "You are an IT support expert. Provide concise, practical solutions for technical incidents. Always provide different approaches and alternatives.");
 
-        Map<String, String> userMessage = new HashMap<>();
-        String userContent = "Provide a solution for this incident: " + description;
+        var userMessage = new HashMap<String, String>();
+        var userContent = "Provide a solution for this incident: " + description;
         
         // If there are previous suggestions, ask for alternatives
         if (previousSuggestions != null && !previousSuggestions.isEmpty()) {
@@ -101,10 +100,10 @@ public class OpenAISuggestionService {
 
         requestBody.put("messages", List.of(systemMessage, userMessage));
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+        var entity = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.exchange(
+            var response = restTemplate.exchange(
                 openAiApiUrl, 
                 HttpMethod.POST, 
                 entity, 
@@ -112,10 +111,10 @@ public class OpenAISuggestionService {
             );
 
             if (response.getBody() != null && response.getBody().containsKey("choices")) {
-                List<Map<String, Object>> choices = (List<Map<String, Object>>) response.getBody().get("choices");
+                var choices = (List<Map<String, Object>>) response.getBody().get("choices");
                 if (!choices.isEmpty()) {
-                    Map<String, Object> firstChoice = choices.get(0);
-                    Map<String, Object> message = (Map<String, Object>) firstChoice.get("message");
+                    var firstChoice = choices.get(0);
+                    var message = (Map<String, Object>) firstChoice.get("message");
                     return (String) message.get("content");
                 }
             }
@@ -130,10 +129,10 @@ public class OpenAISuggestionService {
      * Generate a fallback suggestion when OpenAI is not available
      */
     private String generateFallbackSuggestion(String description, List<String> previousSuggestions) {
-        String lowerDescription = description.toLowerCase();
+        var lowerDescription = description.toLowerCase();
         
         // Count how many previous suggestions we have to provide different alternatives
-        int attemptNumber = (previousSuggestions != null) ? previousSuggestions.size() : 0;
+        var attemptNumber = (previousSuggestions != null) ? previousSuggestions.size() : 0;
         
         // Simple rule-based suggestions based on keywords with alternatives
         if (lowerDescription.contains("password") || lowerDescription.contains("login")) {
@@ -228,7 +227,7 @@ public class OpenAISuggestionService {
      * Get multiple suggestions for an incident
      */
     public List<String> getMultipleSuggestions(String description) {
-        String suggestion = getSuggestion(description);
+        var suggestion = getSuggestion(description);
         return List.of(suggestion);
     }
 
@@ -236,6 +235,6 @@ public class OpenAISuggestionService {
      * Check if OpenAI service is configured and available
      */
     public boolean isOpenAiConfigured() {
-        return openAiApiKey != null && !openAiApiKey.trim().isEmpty();
+        return openAiApiKey != null && !openAiApiKey.strip().isEmpty();
     }
 }

@@ -28,13 +28,13 @@ public class IncidentController {
     @PostMapping
     @ResponseBody // Still return JSON for API
     public ResponseEntity<Incident> createIncident(@RequestBody Incident incident) {
-        List<Incident> existingIncidents = incidentService.getAllIncidents()
+        var existingIncidents = incidentService.getAllIncidents()
                 .stream()
                 .filter(i -> i.getDescription().equalsIgnoreCase(incident.getDescription()))
                 .collect(Collectors.toList());
 
         if (existingIncidents.isEmpty()) {
-            Incident createdIncident = incidentService.saveIncident(incident);
+            var createdIncident = incidentService.saveIncident(incident);
             return ResponseEntity
                     .created(URI.create("/api/incidents/" + createdIncident.getId()))
                     .body(createdIncident);
@@ -49,25 +49,25 @@ public class IncidentController {
     @GetMapping("/solutions")
     @ResponseBody // Still return JSON for API
     public ResponseEntity<List<Incident>> getIncidentSolutions(@RequestParam String description) {
-        List<Incident> solutions = incidentService.findSolutions(description);
+        var solutions = incidentService.findSolutions(description);
         return ResponseEntity.ok(solutions);
     }
 
     @GetMapping
     @ResponseBody // Still return JSON for API
     public ResponseEntity<List<Incident>> getAllIncidents() {
-        List<Incident> incidents = incidentService.getAllIncidents();
+        var incidents = incidentService.getAllIncidents();
         return ResponseEntity.ok(incidents);
     }
 
     @PostMapping("/chat")
     @ResponseBody // Still return JSON for API
     public ResponseEntity<Incident> chatIncident(@RequestBody Map<String, String> payload) {
-        String description = payload.get("description");
-        if (description == null || description.trim().isEmpty()) {
+        var description = payload.get("description");
+        if (description == null || description.strip().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        Incident incident = incidentService.handleIncident(description);
+        var incident = incidentService.handleIncident(description);
         return ResponseEntity.ok(incident);
     }
 
@@ -76,11 +76,11 @@ public class IncidentController {
     public ResponseEntity<Incident> createSubtask(
             @PathVariable Long parentId,
             @RequestBody Map<String, String> payload) {
-        String description = payload.get("description");
-        if (description == null || description.trim().isEmpty()) {
+        var description = payload.get("description");
+        if (description == null || description.strip().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        Incident subIncident = incidentService.createSubIncident(parentId, description);
+        var subIncident = incidentService.createSubIncident(parentId, description);
         return ResponseEntity.ok(subIncident);
     }
 
@@ -89,8 +89,8 @@ public class IncidentController {
     public ResponseEntity<Incident> updateSolution(
             @PathVariable Long id,
             @RequestBody Map<String, String> payload) {
-        String solution = payload.get("solution");
-        Incident updated = incidentService.updateIncidentSolution(id, solution);
+        var solution = payload.get("solution");
+        var updated = incidentService.updateIncidentSolution(id, solution);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         } else {
@@ -103,8 +103,8 @@ public class IncidentController {
     public ResponseEntity<Incident> addSolutionUpdate(
             @PathVariable Long id,
             @RequestBody Map<String, String> payload) {
-        String update = payload.get("update");
-        Incident updated = incidentService.addSolutionUpdate(id, update);
+        var update = payload.get("update");
+        var updated = incidentService.addSolutionUpdate(id, update);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         } else {
@@ -115,7 +115,7 @@ public class IncidentController {
     @PutMapping("/{id}/close")
     @ResponseBody
     public ResponseEntity<Incident> closeIncident(@PathVariable Long id) {
-        Incident closed = incidentService.closeIncident(id);
+        var closed = incidentService.closeIncident(id);
         if (closed != null) {
             return ResponseEntity.ok(closed);
         } else {
@@ -126,7 +126,7 @@ public class IncidentController {
     // Thymeleaf UI endpoint (no @ResponseBody)
     @GetMapping("/solutions-ui")
     public String solutionsPage(@RequestParam(required = false) String description, Model model) {
-        List<Incident> incidents = incidentService.findSolutions(description);
+        var incidents = incidentService.findSolutions(description);
         model.addAttribute("incidents", incidents);
         model.addAttribute("description", description);
         return "solutions"; // This matches solutions.html in templates
@@ -139,7 +139,7 @@ public class IncidentController {
             @RequestParam(required = false) String description, // to preserve search/filter if needed
             Model model) {
         // Find or create incident by description and update its solution
-        Incident incident = incidentService.handleIncident(incidentDescription);
+        var incident = incidentService.handleIncident(incidentDescription);
         incidentService.updateIncidentSolution(incident.getId(), solution);
         // Redirect back to the table page where the user was
         return "redirect:/api/incidents/table";
@@ -153,12 +153,12 @@ public class IncidentController {
             @RequestParam(required = false) String type,
             Model model) {
         
-        List<Incident> allIncidents = incidentService.getAllIncidents();
-        List<Incident> filteredIncidents = allIncidents;
+        var allIncidents = incidentService.getAllIncidents();
+        var filteredIncidents = allIncidents;
         
         // Apply search filter
-        if (search != null && !search.trim().isEmpty()) {
-            String searchLower = search.toLowerCase();
+        if (search != null && !search.strip().isEmpty()) {
+            var searchLower = search.toLowerCase();
             filteredIncidents = filteredIncidents.stream()
                 .filter(incident -> 
                     (incident.getDescription() != null && incident.getDescription().toLowerCase().contains(searchLower)) ||
@@ -197,17 +197,17 @@ public class IncidentController {
         }
         
         // Calculate statistics
-        long totalIncidents = allIncidents.size();
-        long closedIncidents = allIncidents.stream()
+        var totalIncidents = allIncidents.size();
+        var closedIncidents = allIncidents.stream()
             .filter(incident -> "CLOSED".equals(incident.getStatus()))
             .count();
-        long inProgressIncidents = allIncidents.stream()
+        var inProgressIncidents = allIncidents.stream()
             .filter(incident -> "IN_PROGRESS".equals(incident.getStatus()))
             .count();
-        long openIncidents = allIncidents.stream()
+        var openIncidents = allIncidents.stream()
             .filter(incident -> "OPEN".equals(incident.getStatus()) || incident.getStatus() == null)
             .count();
-        long subIncidents = allIncidents.stream()
+        var subIncidents = allIncidents.stream()
             .filter(incident -> incident.getParentIncidentId() != null)
             .count();
         
