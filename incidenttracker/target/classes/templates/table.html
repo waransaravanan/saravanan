@@ -151,7 +151,7 @@
                                         <th scope="col">Incident #</th>
                                         <th scope="col">Description</th>
                                         <th scope="col">Status</th>
-                                        <th scope="col">Type</th>
+                                        <th scope="col">Last Updated</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -191,8 +191,14 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <span th:if="${incident.parentIncidentId == null}" class="badge bg-primary">Parent</span>
-                                            <span th:if="${incident.parentIncidentId != null}" class="badge bg-info">Sub-incident</span>
+                                            <span th:if="${incident.updatedAt != null}" 
+                                                  th:text="${#temporals.format(incident.updatedAt, 'dd-MM-yyyy HH:mm')}" 
+                                                  class="text-muted">
+                                            </span>
+                                            <span th:if="${incident.updatedAt == null}" 
+                                                  class="badge bg-light text-dark">
+                                                Not updated
+                                            </span>
                                         </td>
                                     </tr>
                                 </tbody>

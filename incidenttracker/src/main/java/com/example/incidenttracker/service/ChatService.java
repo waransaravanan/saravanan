@@ -99,6 +99,24 @@ public class ChatService {
                 return handleOtherIssuesYes(session);
             case "other_issues_no":
                 return handleOtherIssuesNo(session);
+            case "ai_suggestion_yes":
+                return handleAiConfirmation(session, "yes");
+            case "ai_suggestion_no":
+                return handleAiConfirmation(session, "no");
+            case "ai_helpful_yes":
+                return handleAiHelpfulResponse(session, "yes");
+            case "ai_helpful_no":
+                return handleAiHelpfulResponse(session, "no");
+            case "option_1":
+                return handleOptionSelection(session, "1");
+            case "option_2":
+                return handleOptionSelection(session, "2");
+            case "option_3":
+                return handleOptionSelection(session, "3");
+            case "ticket_yes":
+                return handleTicketConfirmation(session, "yes");
+            case "ticket_no":
+                return handleTicketConfirmation(session, "no");
             default:
                 return new ChatResponse("I didn't understand that action. Please try again.", session.getState());
         }
@@ -196,10 +214,15 @@ public class ChatService {
         } else {
             // No existing solutions found
             session.setState(ChatState.WAITING_FOR_AI_CONFIRMATION);
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ai_suggestion_yes", "primary"),
+                new ChatButton("No", "ai_suggestion_no", "secondary")
+            );
             return new ChatResponse(
                 "I don't have any existing solutions for issues like '" + message + 
-                "' in our system. Would you like me to get an AI-powered suggestion? (yes/y/sure/ok)", 
-                ChatState.WAITING_FOR_AI_CONFIRMATION
+                "' in our system. Would you like me to get an AI-powered suggestion?", 
+                ChatState.WAITING_FOR_AI_CONFIRMATION,
+                buttons
             );
         }
     }
@@ -212,24 +235,39 @@ public class ChatService {
             session.addPreviousAiSuggestion(aiSuggestion);
             session.setState(ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE);
             
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ai_helpful_yes", "success"),
+                new ChatButton("No", "ai_helpful_no", "danger")
+            );
             return new ChatResponse(
                 "Here's an AI-powered suggestion for your issue:\n\n" + aiSuggestion + 
-                "\n\nIs this helpful? (yes/no)", 
-                ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE
+                "\n\nIs this helpful?", 
+                ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE,
+                buttons
             );
         } else if (isNegativeResponse(message)) {
             // User doesn't want AI suggestion
             session.setState(ChatState.WAITING_FOR_TICKET_CONFIRMATION);
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ticket_yes", "primary"),
+                new ChatButton("No", "ticket_no", "secondary")
+            );
             return new ChatResponse(
-                "No problem! Since we don't have a matching solution, would you like me to create a support ticket for this issue? (yes/no)", 
-                ChatState.WAITING_FOR_TICKET_CONFIRMATION
+                "No problem! Since we don't have a matching solution, would you like me to create a support ticket for this issue?", 
+                ChatState.WAITING_FOR_TICKET_CONFIRMATION,
+                buttons
             );
         } else {
-            // Unclear response - ask again
+            // Unclear response - ask again with buttons
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ai_suggestion_yes", "primary"),
+                new ChatButton("No", "ai_suggestion_no", "secondary")
+            );
             return new ChatResponse(
                 "I didn't quite understand your response. Would you like me to get an AI-powered suggestion for '" + 
-                session.getCurrentIncidentDescription() + "'? Please answer yes or no.", 
-                ChatState.WAITING_FOR_AI_CONFIRMATION
+                session.getCurrentIncidentDescription() + "'?", 
+                ChatState.WAITING_FOR_AI_CONFIRMATION,
+                buttons
             );
         }
     }
@@ -241,28 +279,40 @@ public class ChatService {
             incidentService.updateIncidentSolution(incident.getId(), session.getCurrentAiSuggestion());
             session.setState(ChatState.SESSION_CLOSED);
             
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "other_issues_yes", "primary"),
+                new ChatButton("No", "other_issues_no", "secondary")
+            );
             return new ChatResponse(
                 "Excellent! I've saved this solution for future reference as incident " + incident.getIncidentNumber() + 
-                ". This will help other users with similar issues.\n\nDo you have any other IT issues I can help you with? (yes/no)", 
-                ChatState.SESSION_CLOSED
+                ". This will help other users with similar issues.\n\nDo you have any other IT issues I can help you with?", 
+                ChatState.SESSION_CLOSED,
+                buttons
             );
         } else if (isNegativeResponse(message)) {
             // AI suggestion wasn't helpful - provide options
             session.setState(ChatState.WAITING_FOR_OPTION_SELECTION);
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("1. Try another AI suggestion", "option_1", "primary"),
+                new ChatButton("2. Create support ticket", "option_2", "warning"),
+                new ChatButton("3. Close session", "option_3", "secondary")
+            );
             return new ChatResponse(
-                "I understand the AI suggestion wasn't quite right. I have a few options:\n" +
-                "1. Try another AI suggestion\n" +
-                "2. Create a support ticket for manual resolution\n" +
-                "3. Close this session\n\n" +
-                "Please type 1, 2, or 3 to choose an option.", 
-                ChatState.WAITING_FOR_OPTION_SELECTION
+                "I understand the AI suggestion wasn't quite right. I have a few options:", 
+                ChatState.WAITING_FOR_OPTION_SELECTION,
+                buttons
             );
         } else {
-            // Unclear response - ask again
+            // Unclear response - ask again with buttons
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ai_helpful_yes", "success"),
+                new ChatButton("No", "ai_helpful_no", "danger")
+            );
             return new ChatResponse(
                 "I didn't quite understand your response. Was the AI suggestion helpful for your issue '" + 
-                session.getCurrentIncidentDescription() + "'? Please answer yes or no.", 
-                ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE
+                session.getCurrentIncidentDescription() + "'?", 
+                ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE,
+                buttons
             );
         }
     }
@@ -279,37 +329,54 @@ public class ChatService {
                 session.addPreviousAiSuggestion(aiSuggestion);
                 session.setState(ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE);
                 
+                List<ChatButton> buttons1 = Arrays.asList(
+                    new ChatButton("Yes", "ai_helpful_yes", "success"),
+                    new ChatButton("No", "ai_helpful_no", "danger")
+                );
                 return new ChatResponse(
                     "Let me try a different AI suggestion for your issue:\n\n" + aiSuggestion + 
-                    "\n\nIs this helpful? (yes/no)", 
-                    ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE
+                    "\n\nIs this helpful?", 
+                    ChatState.WAITING_FOR_AI_HELPFUL_RESPONSE,
+                    buttons1
                 );
                 
             case "2":
                 // Create support ticket
                 session.setState(ChatState.WAITING_FOR_TICKET_CONFIRMATION);
+                List<ChatButton> buttons2 = Arrays.asList(
+                    new ChatButton("Yes", "ticket_yes", "primary"),
+                    new ChatButton("No", "ticket_no", "secondary")
+                );
                 return new ChatResponse(
-                    "I'll create a support ticket for manual resolution. Would you like me to proceed? (yes/no)", 
-                    ChatState.WAITING_FOR_TICKET_CONFIRMATION
+                    "I'll create a support ticket for manual resolution. Would you like me to proceed?", 
+                    ChatState.WAITING_FOR_TICKET_CONFIRMATION,
+                    buttons2
                 );
                 
             case "3":
                 // Close session
                 session.setState(ChatState.SESSION_CLOSED);
+                List<ChatButton> buttons3 = Arrays.asList(
+                    new ChatButton("Yes", "other_issues_yes", "primary"),
+                    new ChatButton("No", "other_issues_no", "secondary")
+                );
                 return new ChatResponse(
-                    "No problem! If you need help with anything else, just let me know.\n\nDo you have any other IT issues I can help you with? (yes/no)", 
-                    ChatState.SESSION_CLOSED
+                    "No problem! If you need help with anything else, just let me know.\n\nDo you have any other IT issues I can help you with?", 
+                    ChatState.SESSION_CLOSED,
+                    buttons3
                 );
                 
             default:
-                // Invalid option
+                // Invalid option - show buttons again
+                List<ChatButton> buttonsDefault = Arrays.asList(
+                    new ChatButton("1. Try another AI suggestion", "option_1", "primary"),
+                    new ChatButton("2. Create support ticket", "option_2", "warning"),
+                    new ChatButton("3. Close session", "option_3", "secondary")
+                );
                 return new ChatResponse(
-                    "I didn't understand that option. Please choose:\n" +
-                    "1. Try another AI suggestion\n" +
-                    "2. Create a support ticket for manual resolution\n" +
-                    "3. Close this session\n\n" +
-                    "Please type 1, 2, or 3.", 
-                    ChatState.WAITING_FOR_OPTION_SELECTION
+                    "I didn't understand that option. Please choose one of the following:", 
+                    ChatState.WAITING_FOR_OPTION_SELECTION,
+                    buttonsDefault
                 );
         }
     }
@@ -320,29 +387,44 @@ public class ChatService {
             Incident incident = incidentService.createIncidentWithoutSolution(session.getCurrentIncidentDescription());
             session.setState(ChatState.SESSION_CLOSED);
             
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "other_issues_yes", "primary"),
+                new ChatButton("No", "other_issues_no", "secondary")
+            );
             return new ChatResponse(
                 "Perfect! I've created support ticket " + incident.getIncidentNumber() + 
                 " for your issue: '" + session.getCurrentIncidentDescription() + 
                 "'. Our support team will work on this and update the ticket with a solution.\n\n" +
                 "You can check the status anytime in our solutions page.\n\n" +
-                "Do you have any other IT issues I can help you with? (yes/no)",
-                ChatState.SESSION_CLOSED
+                "Do you have any other IT issues I can help you with?",
+                ChatState.SESSION_CLOSED,
+                buttons
             );
         } else if (isNegativeResponse(message)) {
             // User doesn't want ticket
             session.setState(ChatState.SESSION_CLOSED);
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "other_issues_yes", "primary"),
+                new ChatButton("No", "other_issues_no", "secondary")
+            );
             return new ChatResponse(
                 "No worries! If you change your mind, just let me know. " +
                 "You can also try describing your issue differently - sometimes I can find better matches.\n\n" +
-                "Do you have any other IT issues I can help you with? (yes/no)",
-                ChatState.SESSION_CLOSED
+                "Do you have any other IT issues I can help you with?",
+                ChatState.SESSION_CLOSED,
+                buttons
             );
         } else {
-            // Unclear response - ask again
+            // Unclear response - ask again with buttons
+            List<ChatButton> buttons = Arrays.asList(
+                new ChatButton("Yes", "ticket_yes", "primary"),
+                new ChatButton("No", "ticket_no", "secondary")
+            );
             return new ChatResponse(
                 "I didn't quite understand your response. Would you like me to create a support ticket for your issue '" + 
-                session.getCurrentIncidentDescription() + "'? Please answer yes or no.", 
-                ChatState.WAITING_FOR_TICKET_CONFIRMATION
+                session.getCurrentIncidentDescription() + "'?", 
+                ChatState.WAITING_FOR_TICKET_CONFIRMATION,
+                buttons
             );
         }
     }

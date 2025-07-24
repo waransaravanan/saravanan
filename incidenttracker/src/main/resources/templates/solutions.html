@@ -123,19 +123,6 @@
                                     </h6>
                                     <p class="card-text" th:text="${incident.description}"></p>
                                     
-                                    <h6 class="card-title mt-3">
-                                        <i class="fas fa-lightbulb text-success"></i>
-                                        <strong>Current Solution:</strong>
-                                    </h6>
-                                    <div th:if="${incident.solution != null and !incident.solution.isEmpty()}" 
-                                         class="solution-text">
-                                        <span th:id="'solutionDisplay-' + ${incident.id}" th:text="${incident.solution}"></span>
-                                    </div>
-                                    <div th:if="${incident.solution == null or incident.solution.isEmpty()}" 
-                                         class="no-solution">
-                                        <span th:id="'solutionDisplay-' + ${incident.id}">No solution provided yet.</span>
-                                    </div>
-                                    
                                     <!-- Solution History Log -->
                                     <h6 class="card-title mt-4">
                                         <i class="fas fa-history text-info"></i>

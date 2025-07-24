@@ -133,11 +133,18 @@
             background: transparent;
             border-radius: 20px;
             padding: 10px 15px;
+            transition: all 0.3s ease;
         }
         
         .form-control:focus {
             box-shadow: none;
             background: transparent;
+        }
+        
+        .form-control:disabled {
+            background-color: #f8f9fa;
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         
         .btn-send {
@@ -156,6 +163,12 @@
         .btn-send:hover {
             background: #0056b3;
             transform: scale(1.05);
+        }
+        
+        .btn-send:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .navigation-links {
@@ -246,7 +259,12 @@
         
         // Initialize chat
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('messageInput').focus();
+            // Ensure input starts enabled
+            const input = document.getElementById('messageInput');
+            input.disabled = false;
+            input.placeholder = "Describe your IT issue...";
+            input.focus();
+            
             loadConversationHistory();
         });
         
@@ -268,9 +286,13 @@
                         // Don't show buttons for historical messages
                         addMessageToUI(msg.message, msg.sender, null);
                     });
+                    
+                    // Update input state after loading history
+                    updateInputState();
                 }
             } catch (error) {
                 console.log('No previous conversation found or error loading history');
+                updateInputState();
             }
         }
         
@@ -280,6 +302,16 @@
             const message = input.value.trim();
             
             if (!message || isWaiting) return;
+            
+            // Check if input should be disabled (when buttons are present)
+            const lastButtonContainer = document.querySelector('.message-buttons:last-of-type');
+            if (lastButtonContainer && lastButtonContainer.querySelectorAll('button:not([disabled])').length > 0) {
+                // There are active buttons, user should use them instead of typing
+                const input = document.getElementById('messageInput');
+                input.blur(); // Remove focus from input
+                alert('Please use the buttons above to respond.');
+                return;
+            }
             
             // Add user message to chat
             addMessageToUI(message, 'user');
@@ -306,16 +338,19 @@
                         hideTypingIndicator();
                         addMessageToUI(data.message, 'bot', data.buttons);
                         isWaiting = false;
+                        updateInputState();
                     }, 1000); // Simulate typing delay
                 } else {
                     hideTypingIndicator();
                     addMessageToUI('Sorry, I encountered an error. Please try again.', 'bot');
                     isWaiting = false;
+                    updateInputState();
                 }
             } catch (error) {
                 hideTypingIndicator();
                 addMessageToUI('Sorry, I\'m having trouble connecting. Please check your connection and try again.', 'bot');
                 isWaiting = false;
+                updateInputState();
             }
         }
         
@@ -392,12 +427,18 @@
                 });
                 
                 messageDiv.appendChild(buttonsContainer);
+                
+                // Immediately disable input when buttons are added
+                setTimeout(() => updateInputState(), 10);
             }
             
             messagesContainer.appendChild(messageDiv);
             
             // Scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Update input state after adding message
+            updateInputState();
         }
         
         // Send button response
@@ -437,16 +478,45 @@
                         hideTypingIndicator();
                         addMessageToUI(data.message, 'bot', data.buttons);
                         isWaiting = false;
+                        updateInputState();
                     }, 1000);
                 } else {
                     hideTypingIndicator();
                     addMessageToUI('Sorry, I encountered an error. Please try again.', 'bot');
                     isWaiting = false;
+                    updateInputState();
                 }
             } catch (error) {
                 hideTypingIndicator();
                 addMessageToUI('Sorry, I\'m having trouble connecting. Please check your connection and try again.', 'bot');
                 isWaiting = false;
+                updateInputState();
+            }
+        }
+        
+        // Update input state based on available buttons
+        function updateInputState() {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const lastButtonContainer = document.querySelector('.message-buttons:last-of-type');
+            
+            // Check if there are active (non-disabled) buttons in the last button container
+            const hasActiveButtons = lastButtonContainer && 
+                lastButtonContainer.querySelectorAll('button:not([disabled])').length > 0;
+            
+            if (hasActiveButtons) {
+                // There are active buttons - disable text input
+                input.disabled = true;
+                input.placeholder = "Please use the buttons above to respond";
+                sendButton.disabled = true;
+                input.style.cursor = 'not-allowed';
+            } else {
+                // No active buttons - enable text input
+                input.disabled = false;
+                input.placeholder = "Describe your IT issue...";
+                sendButton.disabled = false;
+                input.style.cursor = 'text';
+                input.focus(); // Auto-focus when input becomes available
             }
         }
         
@@ -466,7 +536,7 @@
         
         // Enter key handler
         document.getElementById('messageInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && !this.disabled) {
                 e.preventDefault();
                 sendMessage();
             }
@@ -515,6 +585,7 @@ Just type your issue naturally!`, 'bot');
                                 <small>For example: "printer not working", "can't access email", "computer running slow"</small>
                             </div>
                         `;
+                        updateInputState();
                     } else {
                         alert('Failed to clear chat history. Please try again.');
                     }
