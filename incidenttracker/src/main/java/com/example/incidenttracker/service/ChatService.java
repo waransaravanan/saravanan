@@ -90,6 +90,9 @@ public class ChatService {
             case WAITING_FOR_CHILD_INCIDENT_DESCRIPTION:
                 return handleChildIncidentDescription(session, message);
                 
+            case WAITING_FOR_NEW_INCIDENT_DESCRIPTION:
+                return handleNewIncidentDescription(session, message);
+                
             case SESSION_CLOSED:
                 return handleNewQuery(session, message);
                 
@@ -129,6 +132,8 @@ public class ChatService {
                 return handleTicketConfirmation(session, "no");
             case "child_incident_yes":
                 return handleChildIncidentConfirmation(session, "yes");
+            case "new_ticket_yes":
+                return handleNewTicketRequest(session);
             default:
                 return new ChatResponse("I didn't understand that action. Please try again.", session.getState());
         }
@@ -150,7 +155,7 @@ public class ChatService {
             session.setState(ChatState.WAITING_FOR_CHILD_INCIDENT_CONFIRMATION);
             var buttons = List.of(
                 new ChatButton("Yes, create child incident", "child_incident_yes", "primary"),
-                new ChatButton("No, create new ticket", "ticket_yes", "secondary")
+                new ChatButton("No, create new ticket", "new_ticket_yes", "secondary")
             );
             return new ChatResponse(
                 "Since the existing solutions didn't resolve your issue, would you like to create a related " +
@@ -477,9 +482,22 @@ public class ChatService {
                 ChatState.WAITING_FOR_CHILD_INCIDENT_DESCRIPTION
             );
         } else {
-            // Fallback to regular ticket creation
-            return handleTicketConfirmation(session, "yes");
+            // User wants to create a new independent ticket - ask for new description
+            session.setState(ChatState.WAITING_FOR_NEW_INCIDENT_DESCRIPTION);
+            return new ChatResponse(
+                "Sure! Please provide a description for your new incident ticket:",
+                ChatState.WAITING_FOR_NEW_INCIDENT_DESCRIPTION
+            );
         }
+    }
+    
+    private ChatResponse handleNewTicketRequest(ChatSession session) {
+        // User wants to create a new independent ticket - ask for new description
+        session.setState(ChatState.WAITING_FOR_NEW_INCIDENT_DESCRIPTION);
+        return new ChatResponse(
+            "Sure! Please provide a description for your new incident ticket:",
+            ChatState.WAITING_FOR_NEW_INCIDENT_DESCRIPTION
+        );
     }
     
     private ChatResponse handleChildIncidentDescription(ChatSession session, String message) {
@@ -511,6 +529,34 @@ public class ChatService {
             "Parent Issue: '" + parentIncident.getDescription() + "'\n\n" +
             "Our support team will work on this child incident and update it with a solution. " +
             "This helps us track related issues together for better resolution.\n\n" +
+            "Do you have any other IT issues I can help you with?",
+            ChatState.SESSION_CLOSED,
+            buttons
+        );
+    }
+    
+    private ChatResponse handleNewIncidentDescription(ChatSession session, String message) {
+        if (message.trim().isEmpty()) {
+            return new ChatResponse(
+                "Please provide a description for the new incident:",
+                ChatState.WAITING_FOR_NEW_INCIDENT_DESCRIPTION
+            );
+        }
+        
+        // Create new independent incident with the new description
+        var newIncident = incidentService.createIncidentWithoutSolution(message);
+        
+        session.setState(ChatState.SESSION_CLOSED);
+        var buttons = List.of(
+            new ChatButton("Yes", "other_issues_yes", "primary"),
+            new ChatButton("No", "other_issues_no", "secondary")
+        );
+        
+        return new ChatResponse(
+            "Perfect! I've created new incident ticket " + newIncident.getIncidentNumber() + 
+            " for your issue: '" + message + 
+            "'. Our support team will work on this and update the ticket with a solution.\n\n" +
+            "You can check the status anytime in our solutions page.\n\n" +
             "Do you have any other IT issues I can help you with?",
             ChatState.SESSION_CLOSED,
             buttons
@@ -1079,6 +1125,7 @@ public class ChatService {
         WAITING_FOR_OTHER_ISSUES,
         WAITING_FOR_CHILD_INCIDENT_CONFIRMATION,
         WAITING_FOR_CHILD_INCIDENT_DESCRIPTION,
+        WAITING_FOR_NEW_INCIDENT_DESCRIPTION,
         SESSION_CLOSED
     }
     
