@@ -50,7 +50,7 @@
                     <a href="/api/incidents/table" class="btn btn-primary me-2">
                         <i class="fas fa-table"></i> View All Incidents
                     </a>
-                    <a href="/chat" class="btn btn-secondary">
+                    <a href="/" class="btn btn-secondary">
                         <i class="fas fa-comments"></i> Chat Interface
                     </a>
                 </div>
@@ -88,6 +88,18 @@
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <div>
                                         <span class="incident-number" th:text="${incident.incidentNumber ?: ('ID: ' + incident.id)}"></span>
+                                        
+                                        <!-- Parent Incident Link for Child Incidents -->
+                                        <div th:if="${incident.parentIncidentId != null and parentIncidents.containsKey(incident.id)}" class="mt-1">
+                                            <small class="text-muted">
+                                                <i class="fas fa-link"></i> Child of: 
+                                                <a th:href="@{/api/incidents/solutions-ui(description=${parentIncidents.get(incident.id).description})}"
+                                                   class="text-primary fw-bold"
+                                                   th:text="${parentIncidents.get(incident.id).incidentNumber ?: ('ID: ' + parentIncidents.get(incident.id).id)}">
+                                                </a>
+                                            </small>
+                                        </div>
+                                        
                                         <small class="text-muted ms-2" th:if="${incident.createdAt != null}">
                                             Created: <span th:text="${#temporals.format(incident.createdAt, 'yyyy-MM-dd HH:mm')}"></span>
                                         </small>
@@ -187,7 +199,7 @@
                         <p th:if="${description == null or description.isEmpty()}">
                             No incidents available in the system.
                         </p>
-                        <a href="/chat" class="btn btn-primary">
+                        <a href="/" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Create New Incident
                         </a>
                     </div>

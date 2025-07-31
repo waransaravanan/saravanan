@@ -11,5 +11,8 @@ import com.example.incidenttracker.model.Incident;
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
     List<Incident> findByDescriptionContainingIgnoreCase(String description);
     List<Incident> findByDescriptionIgnoreCase(String description);
+    List<Incident> findByParentIncidentId(Long parentIncidentId);
+    List<Incident> findByParentIncidentIdIsNull(); // Find root incidents (no parent)
+    List<Incident> findByStatus(String status);
     //List<Incident> findByUniqueDescription(String description);
 }

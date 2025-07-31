@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import com.example.incidenttracker.model.Incident;
 import com.example.incidenttracker.service.IncidentService;
-import com.example.incidenttracker.service.OpenAISuggestionService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
@@ -21,9 +20,6 @@ public class IncidentController {
 
     @Autowired
     private IncidentService incidentService;
-
-    @Autowired
-    private OpenAISuggestionService openAISuggestionService;
 
     @PostMapping
     @ResponseBody // Still return JSON for API
@@ -123,12 +119,81 @@ public class IncidentController {
         }
     }
 
+    @PostMapping("/{id}/resolve-and-create-blocker")
+    @ResponseBody
+    public ResponseEntity<Incident> resolveIncidentAndCreateBlocker(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload) {
+        var solution = payload.get("solution");
+        var newBlockerDescription = payload.get("newBlockerDescription");
+        
+        if (solution == null || solution.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            var newBlockerIncident = incidentService.resolveIncidentAndCreateBlockerIncident(id, solution, newBlockerDescription);
+            if (newBlockerIncident != null) {
+                return ResponseEntity.ok(newBlockerIncident);
+            } else {
+                // Original incident was resolved but no new blocker was created
+                return ResponseEntity.ok().build();
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{parentId}/create-followup")
+    @ResponseBody
+    public ResponseEntity<Incident> createFollowUpIncident(
+            @PathVariable Long parentId,
+            @RequestBody Map<String, String> payload) {
+        var newIssueDescription = payload.get("newIssueDescription");
+        var parentSolutionApplied = payload.get("parentSolutionApplied");
+        
+        if (newIssueDescription == null || newIssueDescription.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            var followUpIncident = incidentService.createFollowUpIncident(parentId, newIssueDescription, parentSolutionApplied);
+            return ResponseEntity.ok(followUpIncident);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/{id}/children")
+    @ResponseBody
+    public ResponseEntity<List<Incident>> getChildIncidents(@PathVariable Long id) {
+        var children = incidentService.getChildIncidents(id);
+        return ResponseEntity.ok(children);
+    }
+
+    @GetMapping("/{id}/hierarchy")
+    @ResponseBody
+    public ResponseEntity<List<Incident>> getIncidentHierarchy(@PathVariable Long id) {
+        var hierarchy = incidentService.getIncidentHierarchy(id);
+        return ResponseEntity.ok(hierarchy);
+    }
+
     // Thymeleaf UI endpoint (no @ResponseBody)
     @GetMapping("/solutions-ui")
     public String solutionsPage(@RequestParam(required = false) String description, Model model) {
         var incidents = incidentService.findSolutions(description);
         model.addAttribute("incidents", incidents);
         model.addAttribute("description", description);
+        
+        // Add parent incident information for child incidents
+        var parentIncidentsMap = incidents.stream()
+            .filter(incident -> incident.getParentIncidentId() != null)
+            .collect(Collectors.toMap(
+                Incident::getId,
+                incident -> incidentService.getParentIncident(incident.getParentIncidentId())
+            ));
+        model.addAttribute("parentIncidents", parentIncidentsMap);
+        
         return "solutions"; // This matches solutions.html in templates
     }
 
@@ -220,6 +285,15 @@ public class IncidentController {
         model.addAttribute("searchTerm", search);
         model.addAttribute("status", status);
         model.addAttribute("type", type);
+        
+        // Add parent incident information for child incidents
+        var parentIncidentsMap = filteredIncidents.stream()
+            .filter(incident -> incident.getParentIncidentId() != null)
+            .collect(Collectors.toMap(
+                Incident::getId,
+                incident -> incidentService.getParentIncident(incident.getParentIncidentId())
+            ));
+        model.addAttribute("parentIncidents", parentIncidentsMap);
         
         return "table";
     }

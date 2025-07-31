@@ -56,7 +56,7 @@
                 <!-- Navigation Links -->
                 <div class="mb-3 text-center">
                     <a href="/api/incidents/solutions-ui" class="btn btn-info me-2">View Solutions</a>
-                    <a href="/chat" class="btn btn-secondary">Chat Interface</a>
+                    <a href="/" class="btn btn-secondary">Chat Interface</a>
                 </div>
 
                 <!-- Statistics Cards -->
@@ -175,6 +175,17 @@
                                         <td class="description-column">
                                             <span th:if="${incident.parentIncidentId != null}" class="text-muted me-2">↳</span>
                                             <span th:text="${incident.description}">Sample description</span>
+                                            
+                                            <!-- Parent Incident Link for Child Incidents -->
+                                            <div th:if="${incident.parentIncidentId != null and parentIncidents.containsKey(incident.id)}" class="mt-1">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-link"></i> Parent: 
+                                                    <a th:href="@{/api/incidents/solutions-ui(description=${parentIncidents.get(incident.id).description})}"
+                                                       class="text-primary fw-bold"
+                                                       th:text="${parentIncidents.get(incident.id).incidentNumber ?: ('ID: ' + parentIncidents.get(incident.id).id)}">
+                                                    </a>
+                                                </small>
+                                            </div>
                                         </td>
                                         <td>
                                             <span th:if="${incident.status == 'CLOSED'}" class="badge bg-secondary">

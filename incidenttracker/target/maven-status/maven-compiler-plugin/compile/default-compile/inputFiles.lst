@@ -5,4 +5,3 @@
 /workspaces/saravanan/incidenttracker/src/main/java/com/example/incidenttracker/model/Incident.java
 /workspaces/saravanan/incidenttracker/src/main/java/com/example/incidenttracker/controller/IncidentController.java
 /workspaces/saravanan/incidenttracker/src/main/java/com/example/incidenttracker/repository/IncidentRepository.java
-/workspaces/saravanan/incidenttracker/src/main/java/com/example/incidenttracker/service/OpenAISuggestionService.java

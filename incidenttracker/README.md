@@ -7,7 +7,7 @@ The Incident Tracker is a comprehensive web-based IT support system featuring an
 
 ### 🤖 **Intelligent Chat Interface**
 - **Smart Conversation Flow**: Button-driven responses for yes/no questions and option selections
-- **AI-Powered Suggestions**: Integration with OpenAI for intelligent problem-solving recommendations
+- **Built-in Suggestions**: Rule-based intelligent problem-solving recommendations
 - **Fuzzy Matching**: Finds similar existing solutions using contextual keyword matching
 - **Input Management**: Text input disabled when buttons are present, enabled only for incident descriptions
 - **Conversation History**: Persistent chat history with session management
@@ -36,7 +36,7 @@ The Incident Tracker is a comprehensive web-based IT support system featuring an
 - **Spring Boot Framework**: RESTful API with MVC architecture
 - **JPA/Hibernate**: Data persistence with H2 database
 - **Session Management**: Stateful chat conversations
-- **OpenAI Integration**: AI-powered suggestion service
+- **Built-in Suggestion Service**: Rule-based suggestion system
 
 ### **Frontend Features**
 - **Responsive Design**: Bootstrap 5 with custom styling
@@ -60,8 +60,7 @@ incidenttracker/
 │   │   │   │   └── IncidentRepository.java     # JPA repository
 │   │   │   └── service/
 │   │   │       ├── ChatService.java            # Conversation flow management
-│   │   │       ├── IncidentService.java        # Business logic
-│   │   │       └── OpenAISuggestionService.java # AI integration
+│   │   │       └── IncidentService.java        # Business logic
 │   │   └── resources/
 │   │       ├── application.properties
 │   │       └── templates/
@@ -78,7 +77,6 @@ incidenttracker/
 ### **Prerequisites**
 - Java 11 or higher
 - Maven 3.6 or higher
-- OpenAI API key (optional, for AI suggestions)
 
 ### **Installation Steps**
 
@@ -91,9 +89,6 @@ incidenttracker/
 2. **Configure Application** (Optional)
    Edit `src/main/resources/application.properties` to set:
    ```properties
-   # OpenAI API configuration (optional)
-   openai.api.key=your-api-key-here
-   
    # Database configuration (H2 in-memory by default)
    spring.datasource.url=jdbc:h2:mem:testdb
    spring.h2.console.enabled=true
@@ -134,7 +129,7 @@ incidenttracker/
 ### **For End Users**
 1. **Report an Issue**: Navigate to the chat interface and describe your IT problem
 2. **Follow Guided Flow**: Use buttons to respond to yes/no questions
-3. **Review Suggestions**: Get AI-powered solutions or existing knowledge base matches
+3. **Review Suggestions**: Get built-in rule-based solutions or existing knowledge base matches
 4. **Track Progress**: Monitor ticket status through the dashboard
 
 ### **For Support Teams**
@@ -149,9 +144,9 @@ incidenttracker/
 User describes issue → 
 System searches existing solutions → 
 If found: Present solutions → Ask if helpful
-If not found: Offer AI suggestion → 
-If AI helpful: Save solution
-If not helpful: Offer options (new AI suggestion, create ticket, close)
+If not found: Offer built-in suggestion → 
+If suggestion helpful: Save solution
+If not helpful: Offer options (new suggestion, create ticket, close)
 Create ticket → Support team resolves → Close ticket
 ```
 
@@ -163,7 +158,7 @@ Create ticket → Support team resolves → Close ticket
 - Visual feedback when input is disabled
 - Auto-focus management for better UX
 
-### **AI-Powered Suggestions**
+### **Rule-Based Suggestions**
 - Contextual problem analysis
 - Multiple suggestion attempts
 - Learning from user feedback

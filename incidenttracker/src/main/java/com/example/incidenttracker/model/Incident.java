@@ -115,4 +115,52 @@ public class Incident {
         }
         this.solutionLog.add(entry);
     }
+
+    /**
+     * Checks if this incident is a root incident (has no parent)
+     * @return true if this is a root incident, false otherwise
+     */
+    public boolean isRootIncident() {
+        return this.parentIncidentId == null;
+    }
+
+    /**
+     * Checks if this incident is a child/subtask incident (has a parent)
+     * @return true if this is a child incident, false otherwise
+     */
+    public boolean isChildIncident() {
+        return this.parentIncidentId != null;
+    }
+
+    /**
+     * Checks if this incident is currently open
+     * @return true if status is OPEN, false otherwise
+     */
+    public boolean isOpen() {
+        return "OPEN".equals(this.status);
+    }
+
+    /**
+     * Checks if this incident is currently in progress
+     * @return true if status is IN_PROGRESS, false otherwise
+     */
+    public boolean isInProgress() {
+        return "IN_PROGRESS".equals(this.status);
+    }
+
+    /**
+     * Checks if this incident is closed
+     * @return true if status is CLOSED, false otherwise
+     */
+    public boolean isClosed() {
+        return "CLOSED".equals(this.status);
+    }
+
+    /**
+     * Checks if this incident has a solution
+     * @return true if solution is not null and not empty, false otherwise
+     */
+    public boolean hasSolution() {
+        return this.solution != null && !this.solution.trim().isEmpty();
+    }
 }
